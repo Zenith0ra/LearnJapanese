@@ -3,10 +3,13 @@
  * 把 LearnJapan 的原始数据（YAML / CSV）转换成站点用的 JSON。
  *
  * 用法：node scripts/build-data.mjs [源目录]
- * 默认源目录：../LearnJapan
+ * 默认源目录：../LearnJapan（只读它的 _data 目录）
  *
- * 说明：YAML 解析借用本机 portfolio 项目里的 js-yaml（只读引用，不装新依赖）。
- * 若你在有网络的机器上跑，把下面 SRC_YAML 换成 `import yaml from 'js-yaml'` 并 npm i 即可。
+ * YAML 解析需要 js-yaml。按下面的顺序找，找到就用：
+ *   1. 项目里 `npm i js-yaml` 装的
+ *   2. 同级 portfolio 项目的 node_modules
+ *   3. 本机全局 / 其他可解析位置
+ * 都没有就报错退出，不会静默出错。
  */
 import { createRequire } from 'node:module';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -14,10 +17,25 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
-const YAML = require('D:/Dev/portfolio/node_modules/js-yaml');
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
+
+const YAML = (() => {
+  const candidates = [
+    'js-yaml',
+    join(ROOT, 'node_modules', 'js-yaml'),
+    'D:/Dev/portfolio/node_modules/js-yaml',
+  ];
+  for (const c of candidates) {
+    try { return require(c); } catch { /* 试下一个 */ }
+  }
+  console.error(
+    '\n缺少 js-yaml，无法解析 YAML。\n' +
+    '在项目目录执行 `npm i js-yaml` 后重试即可（只需要这一个依赖，站点本身仍是零依赖）。\n'
+  );
+  process.exit(1);
+})();
+
 const SRC = resolve(process.argv[2] ?? join(ROOT, '..', 'LearnJapan'));
 const OUT = join(ROOT, 'data');
 
