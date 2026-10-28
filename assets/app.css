@@ -25,6 +25,8 @@
   --font-ui: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, "Segoe UI", system-ui, sans-serif;
   --font-ja: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "Noto Serif JP", "Songti SC", "SimSun", serif;
   --font-text: var(--font-ja);
+  /* 中文正文用宋体一类，和日文的明朝体同一气质；界面控件仍用黑体 */
+  --font-zh: "Source Han Serif SC", "Noto Serif SC", "Songti SC", "STSong", "SimSun", "NSimSun", serif;
 }
 
 [data-theme="dark"] {
@@ -376,7 +378,8 @@ rt { font-family: var(--font-ja); font-size: .62em; color: var(--ruby); line-hei
 .line.gap { padding: 0; height: 12px; line-height: 0; }
 
 .tr {
-  font-size: 16px; line-height: 1.8; color: var(--muted);
+  font-family: var(--font-zh);
+  font-size: 16px; line-height: 1.9; color: var(--muted);
   white-space: pre-wrap; padding: 0 0 10px;
   border-left: 2px solid var(--line-2); padding-left: 13px; margin-left: 1px;
   display: none;
@@ -409,7 +412,8 @@ rt { font-family: var(--font-ja); font-size: .62em; color: var(--ruby); line-hei
 /* 没有汉字的词没有读音行，留出等高空白，两栏的行才齐 */
 .word-row .kana.empty { display: block; height: 1.45em; }
 .word-row .zh {
-  font-size: 16px; color: var(--ink-2); line-height: 1.6;
+  font-family: var(--font-zh);
+  font-size: 16px; color: var(--ink-2); line-height: 1.7;
 }
 .word-row .pos {
   font-size: 11.5px; color: var(--accent); background: var(--accent-bg);
@@ -422,20 +426,23 @@ rt { font-family: var(--font-ja); font-size: .62em; color: var(--ruby); line-hei
 }
 
 /* grammar */
-.g-item { padding: 18px 0; border-bottom: 1px solid var(--line); }
-.g-item:last-child { border-bottom: 0; }
-.g-item .exp {
+.g-item, .gpage-item {
+  padding: 18px 0; border-bottom: 1px solid var(--line);
+}
+.g-item:last-child, .gpage-item:last-child { border-bottom: 0; }
+.exp {
   font-family: var(--font-ja); font-size: 18.5px; font-weight: 600; color: var(--ink);
   white-space: pre-wrap;
 }
-.g-item .short {
-  display: inline-block; font-size: 12px; color: var(--accent);
+.short {
+  display: inline-block; font-size: 12px; color: var(--accent); font-family: var(--font-ui);
   background: var(--accent-bg); padding: 1px 7px; border-radius: 4px;
   margin-left: 9px; vertical-align: 3px; font-weight: 500;
 }
-.g-item .exp-zh {
+.exp-zh {
+  font-family: var(--font-zh);
   font-size: 16px; color: var(--ink-2); margin-top: 8px;
-  line-height: 1.85; white-space: pre-wrap;
+  line-height: 1.9; white-space: pre-wrap;
 }
 
 /* ============================================================
@@ -529,7 +536,7 @@ select.sel {
 .wtable td.c-kana { font-family: var(--font-ja); }
 .wtable td.c-kanji { font-family: var(--font-ja); font-size: 19px; font-weight: 600; }
 .wtable td.c-pos { color: var(--muted); font-size: 13px; }
-.wtable td.c-desc { color: var(--ink-2); font-size: 15.5px; }
+.wtable td.c-desc { font-family: var(--font-zh); color: var(--ink-2); font-size: 15.5px; }
 .wtable td.c-l { color: var(--faint); font-size: 12.5px; text-align: right; font-variant-numeric: tabular-nums; }
 
 .pager {
@@ -543,10 +550,6 @@ select.sel {
 .pager.lesson-nav > :last-child { justify-self: end; }
 
 /* grammar page */
-.gpage-item {
-  padding: 18px 0; border-bottom: 1px solid var(--line);
-}
-.gpage-item:last-child { border-bottom: 0; }
 
 /* ============================================================
    flash cards
@@ -600,7 +603,7 @@ select.sel {
   font-family: var(--font-ja); font-weight: 600;
   line-height: 1.45; color: var(--ink);
 }
-.front-cn { color: var(--ink); line-height: 1.5; font-weight: 500; }
+.front-cn { font-family: var(--font-zh); color: var(--ink); line-height: 1.5; font-weight: 500; }
 .speak-big {
   display: flex; flex-direction: column; align-items: center; gap: 12px;
   color: var(--muted); padding: 22px 30px; border-radius: 999px;
@@ -633,7 +636,8 @@ select.sel {
   margin: 12px 0 6px; flex-shrink: 0;
 }
 .back-meaning {
-  font-size: 22px; color: var(--ink-2); line-height: 1.6;
+  font-family: var(--font-zh);
+  font-size: 22px; color: var(--ink-2); line-height: 1.7;
   max-width: 30em;
 }
 .speak-btn { color: var(--faint); padding: 7px; border-radius: 8px; flex-shrink: 0; }

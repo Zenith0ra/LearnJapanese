@@ -47,7 +47,17 @@ const list = await waitFor(async () => {
 const target = list.find((t) => t.type === 'page');
 
 const ws = new WebSocket(target.webSocketDebuggerUrl);
-await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
+await Promise.race([
+  new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; }),
+  sleep(8000).then(() => { throw new Error('WebSocket 连接超时'); }),
+]);
+
+// 任何一步失败都别让进程僵着
+process.on('unhandledRejection', (e) => {
+  console.error('截图失败：', e?.message ?? e);
+  try { chrome.kill(); } catch {}
+  process.exit(1);
+});
 
 let id = 0;
 const pending = new Map();
@@ -61,11 +71,14 @@ ws.onmessage = (m) => {
   } else if (msg.method) events.push(msg);
 };
 const send = (method, params = {}) =>
-  new Promise((res, rej) => {
-    const n = ++id;
-    pending.set(n, { res, rej });
-    ws.send(JSON.stringify({ id: n, method, params }));
-  });
+  Promise.race([
+    new Promise((res, rej) => {
+      const n = ++id;
+      pending.set(n, { res, rej });
+      ws.send(JSON.stringify({ id: n, method, params }));
+    }),
+    sleep(15000).then(() => { throw new Error(`CDP ${method} 超时`); }),
+  ]);
 
 await send('Page.enable');
 await send('Runtime.enable');
@@ -92,7 +105,8 @@ for (const url of urls) {
 
   const { data } = await send('Page.captureScreenshot', {
     format: 'png',
-    captureBeyondViewport: true,
+    // 超长页面整页截图会让 Chrome 卡死，SHOT_VIEWPORT=1 时只截可视区
+    captureBeyondViewport: process.env.SHOT_VIEWPORT !== '1',
   });
   const file = join(OUT, `${name}.png`);
   writeFileSync(file, Buffer.from(data, 'base64'));
