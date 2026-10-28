@@ -229,14 +229,15 @@ rt { font-family: var(--font-ja); font-size: .62em; color: var(--ruby); line-hei
 .pitch .mora {
   display: inline-block; position: relative;
   font-family: var(--font-ja);
+  line-height: 1;
 }
 .pitch .mora.h::before {
-  content: ""; position: absolute; left: 0; right: 0; top: -.24em;
+  content: ""; position: absolute; left: 0; right: 0; top: -.22em;
   height: 1.5px; background: currentColor; opacity: .5;
 }
 .pitch .mora.drop::after {
-  content: ""; position: absolute; right: 0; top: -.24em;
-  width: 1.5px; height: .24em; background: currentColor; opacity: .5;
+  content: ""; position: absolute; right: 0; top: -.22em;
+  width: 1.5px; height: .22em; background: currentColor; opacity: .5;
 }
 /* 复合词的两个音调核之间留一点空 */
 .pitch-gap { display: inline-block; width: .3em; }
@@ -588,7 +589,8 @@ select.sel {
   padding: 40px 32px; text-align: center;
 }
 .flashcard .face.back {
-  padding: 26px 30px; text-align: left;
+  padding: 30px 34px; text-align: center;
+  align-items: center; justify-content: center;
 }
 
 .front-ja {
@@ -604,31 +606,40 @@ select.sel {
 }
 .speak-big:hover { color: var(--accent); border-color: var(--accent); }
 
-.back-top { display: flex; gap: 8px; flex-shrink: 0; }
-.back-top .pos {
+/* 背面：整体居中，汉字最大、读音次之、释义再次 */
+.back-inner {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; max-width: 100%;
+}
+.back-pos {
   font-size: 12.5px; color: var(--accent); background: var(--accent-bg);
-  padding: 2px 8px; border-radius: 5px; font-weight: 500;
+  padding: 2px 9px; border-radius: 5px; font-weight: 500;
+  margin-bottom: 4px;
 }
-.back-main {
-  flex: 1; display: flex; flex-direction: column;
-  justify-content: center; gap: 18px; min-height: 0;
+.back-hero {
+  font-family: var(--font-ja); font-weight: 600; color: var(--ink);
+  line-height: 1.3; letter-spacing: .02em;
 }
-.back-kanji {
-  font-family: var(--font-ja); font-size: 30px; color: var(--muted);
-  line-height: 1.35;
+.back-reading {
+  display: inline-flex; align-items: flex-end; gap: 10px;
+  font-family: var(--font-ja); color: var(--ink-2);
+  line-height: 1.4; margin-top: 4px;
 }
-.back-kana { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
-.kana-big {
-  font-family: var(--font-ja); font-size: 36px; color: var(--ink); line-height: 1.35;
+.back-divider {
+  width: 44px; height: 1px; background: var(--line-2);
+  margin: 12px 0 6px; flex-shrink: 0;
 }
-.speak-btn { color: var(--faint); padding: 7px; border-radius: 8px; }
+.back-meaning {
+  font-size: 22px; color: var(--ink-2); line-height: 1.6;
+  max-width: 30em;
+}
+.speak-btn { color: var(--faint); padding: 7px; border-radius: 8px; flex-shrink: 0; }
 .speak-btn:hover { color: var(--accent); background: var(--surface-2); }
 .pitch-num {
-  font-size: 24px; font-weight: 600; color: var(--accent);
-  line-height: 1; margin-bottom: 5px; font-variant-numeric: tabular-nums;
+  font-size: 22px; font-weight: 600; color: var(--accent);
+  line-height: 1; margin-bottom: 4px; font-variant-numeric: tabular-nums;
 }
-.back-line { height: 1px; background: var(--line); margin: 16px 0; flex-shrink: 0; }
-.back-meaning { font-size: 20px; color: var(--ink-2); line-height: 1.65; }
+.flashcard.no-fade .face { transition: none; }
 
 .done { text-align: center; }
 .done-title { font-family: var(--font-ja); font-size: 26px; color: var(--ink); }
@@ -728,10 +739,9 @@ select.sel {
 
   .flashcard { min-height: 320px; }
   .flashcard .face.front { padding: 30px 20px; }
-  .flashcard .face.back { padding: 20px 22px; }
-  .back-kanji { font-size: 24px; }
-  .kana-big { font-size: 30px; }
+  .flashcard .face.back { padding: 22px 20px; }
   .back-meaning { font-size: 18px; }
+  .pitch-num { font-size: 19px; }
   .card-actions .btn { height: 42px; padding: 0 22px; }
 
   .pager.lesson-nav { gap: 10px; }

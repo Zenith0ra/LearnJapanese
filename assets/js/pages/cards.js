@@ -139,25 +139,43 @@ export async function render(root) {
   }
 
   function backHtml(w) {
+    const kanaBase = kanaOf(w);
+    const hasKanji = !!w.kanji && w.kanji !== kanaBase;
     const p = pitchNum(w);
+    const k = window.innerWidth < 621 ? 0.82 : 1;
+
+    const heroSize = hasKanji
+      ? Math.round((w.kanji.length <= 3 ? 46 : w.kanji.length <= 5 ? 38 : 30) * k)
+      : Math.round((kanaBase.length <= 5 ? 40 : kanaBase.length <= 9 ? 32 : 26) * k);
+    const kanaSize = Math.round((kanaBase.length <= 5 ? 27 : kanaBase.length <= 9 ? 23 : 20) * k);
+
     return `
-      <div class="back-top">
-        ${w.pos ? `<span class="pos">${esc(w.pos)}</span>` : ''}
-      </div>
-      <div class="back-main">
-        ${w.kanji && w.kanji !== kanaOf(w) ? `<div class="back-kanji">${esc(w.kanji)}</div>` : ''}
-        <div class="back-kana">
-          <span class="kana-big">${pitch(w.kana)}</span>
+      <div class="back-inner">
+        ${w.pos ? `<div class="back-pos">${esc(w.pos)}</div>` : ''}
+        <div class="back-hero" style="font-size:${heroSize}px">
+          ${hasKanji ? esc(w.kanji) : pitch(w.kana)}
+        </div>
+        ${hasKanji ? `
+        <div class="back-reading" style="font-size:${kanaSize}px">
+          <span class="reading-kana">${pitch(w.kana)}</span>
           <button class="speak-btn" id="speakBtn" aria-label="发音">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7"/>
             </svg>
           </button>
           ${p !== null ? `<span class="pitch-num" title="声调">${p}</span>` : ''}
-        </div>
+        </div>` : `
+        <div class="back-reading" style="font-size:${kanaSize}px">
+          <button class="speak-btn" id="speakBtn" aria-label="发音">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7"/>
+            </svg>
+          </button>
+          ${p !== null ? `<span class="pitch-num" title="声调">${p}</span>` : ''}
+        </div>`}
+        <div class="back-divider"></div>
+        <div class="back-meaning">${esc(w.desc)}</div>
       </div>
-      <div class="back-line"></div>
-      <div class="back-meaning">${esc(w.desc)}</div>
     `;
   }
 
@@ -205,14 +223,24 @@ export async function render(root) {
     if (!state.revealed) { reveal(); return; }
     state.i += 1;
     state.revealed = false;
+    // 关掉过渡再换内容：否则背面淡出的那 160ms 里会看到下一张的答案
+    card.classList.add('no-fade');
     paint();
+    void card.offsetWidth;
+    card.classList.remove('no-fade');
   }
 
   function prev() {
-    if (state.i === 0) { if (state.revealed) { state.revealed = false; paint(); } return; }
+    if (state.i === 0) {
+      if (state.revealed) { state.revealed = false; paint(); }
+      return;
+    }
     state.i -= 1;
     state.revealed = false;
+    card.classList.add('no-fade');
     paint();
+    void card.offsetWidth;
+    card.classList.remove('no-fade');
   }
 
   card.addEventListener('click', () => next());
