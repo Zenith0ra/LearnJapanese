@@ -1,7 +1,7 @@
-# 標日 · 新标准日本语学习站
+# LearnJapanese · 标准日本语学习站
 
 用 [wizicer/LearnJapan](https://github.com/wizicer/LearnJapan) 整理的数据重写的静态站点：
-**零依赖、零构建**，`git push` 就能发布。
+**零依赖、零构建**，`git push` 就能发布到 <https://jp.houlinzhi.com/>。
 
 ## 内容
 
@@ -35,11 +35,14 @@ assets/js/ruby.js     注音与音调渲染
 assets/js/store.js    主题与本地偏好
 assets/js/audio.js    音频与朗读
 assets/js/pages/      各页面
+assets/js/ui/         下拉等交互组件
 data/*.json           由 _data 转换出的站点数据
 audio/                课文与单词音频
 scripts/build-data.mjs 数据转换（读 ../LearnJapan/_data）
 scripts/serve.mjs     本地预览
 scripts/shot.mjs      截图（调试用，走 CDP）
+scripts/smoke.mjs     交互冒烟测试（无头浏览器点一遍）
+DEPLOY.md             部署步骤
 ```
 
 ## 本地预览
@@ -73,12 +76,13 @@ npm run data           # 需要同级目录下有 LearnJapan 仓库
 > `npm i js-yaml` 后把 `require('D:/Dev/portfolio/node_modules/js-yaml')`
 > 换成 `require('js-yaml')` 即可。
 
-## 部署到 jp.houlinzhi.com
+## 部署
 
-1. 新建 GitHub 仓库，把本目录推上去（默认分支 `main`）。
-2. 仓库 Settings → Pages → Source 选 **Deploy from a branch**，分支 `main`、目录 `/ (root)`。
-3. DNS 加一条 `CNAME` 记录：`jp` → `<你的用户名>.github.io`。
-4. 仓库里的 `CNAME` 文件已写好 `jp.houlinzhi.com`；`robots.txt` 已禁止收录。
+完整的发布步骤（建仓库 → 推送 → 开 Pages → 绑域名 → 自检清单 → 常见问题）见
+[**DEPLOY.md**](./DEPLOY.md)。
+
+一句话版本：建仓库 `LearnJapanese` → `git push` → Pages 选 `main` + `/ (root)` →
+DNS 加 `jp` CNAME 指向 `zenith0ra.github.io` → Pages 填 Custom domain 并勾 Enforce HTTPS。
 
 站点是纯静态文件，不需要 Actions、不需要 Ruby、不需要 npm install。
 
