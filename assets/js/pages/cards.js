@@ -44,6 +44,12 @@ export async function render(root) {
           ${MODES.map((m) => `<button data-mode="${m.id}" class="${m.id === state.mode ? 'on' : ''}">${m.label}</button>`).join('')}
         </div>
         <span class="count" id="counter"></span>
+        <button class="icon-btn" id="restart" title="重新洗牌" aria-label="重新洗牌">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+               stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 11a8 8 0 10-2.6 6"/><path d="M20 5v6h-6"/>
+          </svg>
+        </button>
       </div>
 
       <div class="card-progress"><i id="bar" style="width:0%"></i></div>
@@ -52,12 +58,10 @@ export async function render(root) {
         <div class="flashcard" id="card" role="button" tabindex="0" aria-label="翻转卡片">
           <div class="face front" id="front"></div>
           <div class="face back" id="back"></div>
+          <div class="card-cta">
+            <button class="btn btn-primary" id="action">揭晓</button>
+          </div>
         </div>
-      </div>
-
-      <div class="card-actions">
-        <button class="btn btn-primary" id="action">揭晓</button>
-        <button class="btn btn-sm" id="restart" title="重新洗牌">重新开始</button>
       </div>
     </div>
   `;
@@ -244,8 +248,15 @@ export async function render(root) {
   }
 
   card.addEventListener('click', () => next());
-  actionBtn.addEventListener('click', () => (actionBtn.dataset.done ? restart() : next()));
-  root.querySelector('#restart').addEventListener('click', restart);
+  actionBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (actionBtn.dataset.done) restart();
+    else next();
+  });
+  root.querySelector('#restart').addEventListener('click', (e) => {
+    e.stopPropagation();
+    restart();
+  });
 
   root.querySelector('#modes').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-mode]');

@@ -586,10 +586,10 @@ select.sel {
 .flashcard.revealed .face.back { opacity: 1; pointer-events: auto; }
 .flashcard .face.front {
   align-items: center; justify-content: center;
-  padding: 40px 32px; text-align: center;
+  padding: 36px 32px 74px; text-align: center;
 }
 .flashcard .face.back {
-  padding: 30px 34px; text-align: center;
+  padding: 28px 34px 74px; text-align: center;
   align-items: center; justify-content: center;
 }
 
@@ -645,12 +645,15 @@ select.sel {
 .done-title { font-family: var(--font-ja); font-size: 26px; color: var(--ink); }
 .done-sub { margin-top: 10px; color: var(--muted); font-size: 15px; }
 
-.card-actions {
-  display: flex; align-items: center; justify-content: center;
-  gap: 12px; margin-top: 20px;
+/* 主操作放在卡片底部内侧：不跟卡片抢视觉，也不用两个大小不一的按钮 */
+.card-cta {
+  position: absolute; left: 0; right: 0; bottom: 18px;
+  display: flex; justify-content: center; z-index: 2;
 }
-.card-actions .btn { height: 46px; padding: 0 28px; font-size: 15px; border-radius: 10px; }
-.card-actions .btn-sm { height: 36px; padding: 0 14px; font-size: 13.5px; }
+.card-cta .btn {
+  height: 38px; padding: 0 26px; font-size: 14.5px; border-radius: 999px;
+  box-shadow: 0 2px 10px -2px rgba(30,20,10,.18);
+}
 
 /* ---------- responsive ---------- */
 @media (min-width: 1080px) {
@@ -738,11 +741,12 @@ select.sel {
   .g-item .exp-zh { font-size: 14.5px; }
 
   .flashcard { min-height: 320px; }
-  .flashcard .face.front { padding: 30px 20px; }
-  .flashcard .face.back { padding: 22px 20px; }
+  .flashcard .face.front { padding: 26px 20px 64px; }
+  .flashcard .face.back { padding: 22px 20px 64px; }
   .back-meaning { font-size: 18px; }
   .pitch-num { font-size: 19px; }
-  .card-actions .btn { height: 42px; padding: 0 22px; }
+  .card-cta { bottom: 14px; }
+  .card-cta .btn { height: 36px; padding: 0 22px; }
 
   .pager.lesson-nav { gap: 10px; }
   .pager.lesson-nav .btn { padding: 0 12px; font-size: 13px; }
