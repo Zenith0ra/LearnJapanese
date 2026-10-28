@@ -72,9 +72,10 @@ npm run data           # 需要同级目录下有 LearnJapan 仓库
 用自带的 CSV 解析读 `words.csv` / `grammar.csv`，输出到 `data/`，并做一致性自检
 （课数、译文与原文行数是否对齐、每课是否都有注音等）。
 
-> 当前脚本引用的是本机 `D:/Dev/portfolio/node_modules/js-yaml`。换机器时改成
-> `npm i js-yaml` 后把 `require('D:/Dev/portfolio/node_modules/js-yaml')`
-> 换成 `require('js-yaml')` 即可。
+> `js-yaml` 是唯一需要的依赖，脚本会自动按顺序找：项目里的 `node_modules` →
+> 同级 `..\portfolio\node_modules` → 直接 `require('js-yaml')`。都没有时会提示
+> `npm i js-yaml`（只影响重建数据，站点本身仍然零依赖）。
+> 源目录也可以传参：`node scripts/build-data.mjs D:\somewhere\LearnJapan`。
 
 ## 部署
 
