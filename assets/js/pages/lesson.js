@@ -105,8 +105,7 @@ export async function render(root, id) {
       seek.value = String(Math.round(ratio * 1000));
       timeEl.textContent = `${fmtTime(st.time)} / ${fmtTime(st.duration)}`;
     }
-    seek.style.background =
-      `linear-gradient(to right, var(--accent) ${ratio * 100}%, var(--line-2) ${ratio * 100}%)`;
+    seek.style.setProperty('--fill', `${ratio * 100}%`);
   }
 
   const offAudio = audio.onChange(paintAudio);
@@ -122,7 +121,7 @@ export async function render(root, id) {
     const r = Number(seek.value) / 1000;
     const dur = audio.state().duration;
     timeEl.textContent = `${fmtTime(r * dur)} / ${fmtTime(dur)}`;
-    seek.style.background = `linear-gradient(to right, var(--accent) ${r * 100}%, var(--line-2) ${r * 100}%)`;
+    seek.style.setProperty('--fill', `${r * 100}%`);
   });
   seek.addEventListener('change', () => {
     audio.seekRatio(Number(seek.value) / 1000);
@@ -265,7 +264,7 @@ function wordRow(w) {
   const pos = w.pos ? `<span class="pos">${esc(w.pos)}</span>` : '';
 
   return `
-    <div class="word-row" data-read="${esc(kanaBase)}" title="点击朗读">
+    <div class="word-row${kanaOnly ? ' no-kana' : ''}" data-read="${esc(kanaBase)}" title="点击朗读">
       ${kanaOnly ? '' : `<div class="kana">${pitch(w.kana)}</div>`}
       <div class="kanji">
         <span class="w">${kanaOnly ? pitch(w.kana) : esc(surface)}</span>${pos}

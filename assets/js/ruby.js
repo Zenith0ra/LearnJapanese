@@ -37,17 +37,35 @@ export function moras(kana) {
 /**
  * 音调可视化。kana 形如 `ちゅうごくじん@4`
  * 0: 平板  1: 头高  n: 第 n 拍后下降
+ * 一个词条可能带多个音调核（`どうも@1すみません@4`），逐段渲染、中间留小间隙。
  */
 export function pitch(kana) {
   const raw = String(kana ?? '').trim();
-  const m = raw.match(/^(.*?)@(\d{1,2})$/);
-  if (!m) return `<span class="pitch">${esc(raw)}</span>`;
+  if (!raw.includes('@')) return `<span class="pitch">${esc(raw)}</span>`;
 
-  const [, base, numStr] = m;
-  const n = Number(numStr);
-  const ms = moras(base);
-  if (!ms.length) return esc(base);
+  const segments = [];
+  const re = /([^@]+)@(\d{1,2})/g;
+  let m;
+  let end = 0;
+  while ((m = re.exec(raw)) !== null) {
+    segments.push({ text: m[1], accent: Number(m[2]) });
+    end = re.lastIndex;
+  }
+  if (end < raw.length) segments.push({ text: raw.slice(end), accent: null });
+  if (!segments.length) return `<span class="pitch">${esc(raw.replace(/@\d{1,2}/g, ''))}</span>`;
 
+  return `<span class="pitch">${segments
+    .map((s, i) => (i ? '<span class="pitch-gap"></span>' : '') + segment(s))
+    .join('')}</span>`;
+}
+
+function segment({ text, accent }) {
+  const ms = moras(text);
+  if (!ms.length) return '';
+  if (accent === null || !Number.isFinite(accent)) {
+    return ms.map((mo) => `<span class="mora">${esc(mo)}</span>`).join('');
+  }
+  const n = accent;
   const high = ms.map((_, i) => {
     if (n === 0) return i > 0;       // 平板：首拍低，其余高
     if (n === 1) return i === 0;     // 头高：首拍高，其余低
@@ -55,14 +73,13 @@ export function pitch(kana) {
   });
   const dropAt = n >= 1 && n < ms.length ? n - 1 : -1;
 
-  const spans = ms
+  return ms
     .map((mo, i) => {
       const cls = ['mora', high[i] ? 'h' : '', i === dropAt ? 'drop' : '']
         .filter(Boolean).join(' ');
       return `<span class="${cls}">${esc(mo)}</span>`;
     })
     .join('');
-  return `<span class="pitch">${spans}</span>`;
 }
 
 /** 带音调的假名，去掉数字后的纯假名（供朗读用） */

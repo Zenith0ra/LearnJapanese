@@ -28,8 +28,9 @@ const read = (p) => readFileSync(join(SRC, p), 'utf8');
 /**
  * 把 YAML 里的 markdown 块（`> * 句子` / `* 句子` / 空行 / `---` 分场）拆成
  * scenes: string[][]，每个 scene 是若干行，行内保留原始标记（!漢字(かんじ)、@音调、全角空格缩进）。
+ * trimIndent 用于译文：中文行首的全角空格多少不一，统一去掉，左边缘才整齐。
  */
-function parseBlock(text) {
+function parseBlock(text, trimIndent = false) {
   if (!text) return { scenes: [] };
   const scenes = [[]];
   for (const raw of String(text).split('\n')) {
@@ -37,6 +38,7 @@ function parseBlock(text) {
     if (!s.trim()) continue;
     if (/^-{3,}$/.test(s.trim())) { scenes.push([]); continue; }
     s = s.replace(/^>\s*/, '').replace(/^[*-]\s?/, '');
+    if (trimIndent) s = s.replace(/^[\u3000\s]+/, '');
     scenes[scenes.length - 1].push(s);
   }
   return { scenes: scenes.filter((s) => s.length > 0) };
@@ -73,9 +75,9 @@ function buildBasic(raw, units) {
         contextTitle: l.contitle ? purify(l.contitle) : '',
         contextTitleRaw: l.contitle ? String(l.contitle).trim() : '',
         t: {
-          basic4: parseBlock(l.basic4t),
-          basicc: parseBlock(l.basicct),
-          context: parseBlock(l.contextt),
+          basic4: parseBlock(l.basic4t, true),
+          basicc: parseBlock(l.basicct, true),
+          context: parseBlock(l.contextt, true),
           contextTitle: l.contitlet ? String(l.contitlet).trim() : '',
         },
       };

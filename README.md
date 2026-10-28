@@ -20,7 +20,7 @@
 - `#/lesson/l1?tab=words&tr=1&ruby=0` 可深链到任意标签页与显示状态
 - `#/words` 单词总表：搜索、按级别 / 课次筛选
 - `#/grammar` 语法总表：搜索、按课次分组
-- `#/cards` 背单词：翻转卡片、键盘操作（空格翻面 / ← 不熟 / → 记住）
+- `#/cards` 背单词：四种出题方向（中文 / 汉字 / 假名 / 听音）+ 3D 翻转，空格翻面、→ 下一张、← 上一张
 
 背单词的「已记住」与注音 / 译文偏好存在浏览器 localStorage，不需要后端。
 
@@ -48,7 +48,7 @@ scripts/shot.mjs      截图（调试用，走 CDP）
 npm run serve          # http://127.0.0.1:8321/
 ```
 
-因为用了 `fetch` 读 JSON，不能直接双击 `index.html`，需要起一个静态服务器。
+因为用了 `fetch` 读 JSON，不能直接双击 `index.html`，需要起一个静态服务器。`scripts/serve.mjs` 支持 Range 请求——没有它浏览器会认为音频不可拖动，进度条点了会跳回开头（GitHub Pages 本身支持 Range，线上不会有这个问题）。
 
 ## 自检
 

@@ -44,12 +44,17 @@ export function setRate(r) {
 }
 
 export function seek(sec) {
+  const dur = el.duration;
+  // 时长还没拿到就别动 currentTime，否则会被钳制到 0（点了进度条跳回开头）
+  if (!Number.isFinite(dur) || dur <= 0) return;
   if (!Number.isFinite(sec)) return;
-  el.currentTime = Math.max(0, Math.min(sec, (el.duration || 0) - 0.05));
+  el.currentTime = Math.max(0, Math.min(sec, dur - 0.05));
 }
 
 export function seekRatio(r) {
-  seek(r * (el.duration || 0));
+  const dur = el.duration;
+  if (!Number.isFinite(dur) || dur <= 0) return;
+  seek(r * dur);
 }
 
 export function stop() {

@@ -12,6 +12,7 @@
   --ink-2:     #45403a;
   --muted:     #7d766c;
   --faint:     #a39a8f;
+  --ruby:      #5c5548;
   --line:      #e3dbcd;
   --line-2:    #d3c8b5;
   --accent:    #b0442c;
@@ -22,8 +23,8 @@
   --r-lg: 18px;
 
   --font-ui: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, "Segoe UI", system-ui, sans-serif;
-  --font-ja: "Yu Gothic", "YuGothic", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Meiryo", var(--font-ui);
-  --font-text: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "Noto Serif JP", "Songti SC", "SimSun", serif;
+  --font-ja: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "Noto Serif JP", "Songti SC", "SimSun", serif;
+  --font-text: var(--font-ja);
 }
 
 [data-theme="dark"] {
@@ -34,6 +35,7 @@
   --ink-2:     #cfc7b8;
   --muted:     #9a9283;
   --faint:     #6c6559;
+  --ruby:      #b0a696;
   --line:      #302c22;
   --line-2:    #403a2c;
   --accent:    #d9705a;
@@ -51,6 +53,7 @@
     --ink-2:     #cfc7b8;
     --muted:     #9a9283;
     --faint:     #6c6559;
+  --ruby:      #b0a696;
     --line:      #302c22;
     --line-2:    #403a2c;
     --accent:    #d9705a;
@@ -158,7 +161,7 @@ main {
   display: inline-flex; align-items: center; gap: 5px;
   height: 24px; padding: 0 9px; border-radius: 6px;
   background: var(--surface-2); color: var(--muted);
-  font-size: 12.5px; font-variant-numeric: tabular-nums;
+  font-size: 13.5px; font-variant-numeric: tabular-nums;
 }
 
 /* segmented control */
@@ -212,14 +215,14 @@ main {
   transform: translateX(-50%);
   white-space: nowrap;
   font-family: var(--font-ja);
-  font-size: .55em; font-weight: 400; letter-spacing: 0;
-  line-height: 1; color: var(--muted);
+  font-size: max(16px, .68em); font-weight: 400; letter-spacing: 0;
+  line-height: 1; color: var(--ruby);
   pointer-events: none;
 }
 .hide-ruby .rb-r { visibility: hidden; }
 /* 兜底：若数据里还有原生 ruby */
 ruby { ruby-position: over; ruby-align: center; }
-rt { font-family: var(--font-ja); font-size: .55em; color: var(--muted); line-height: 1; }
+rt { font-family: var(--font-ja); font-size: .62em; color: var(--ruby); line-height: 1; }
 
 /* ---------- pitch accent ---------- */
 .pitch { display: inline; }
@@ -235,6 +238,8 @@ rt { font-family: var(--font-ja); font-size: .55em; color: var(--muted); line-he
   content: ""; position: absolute; right: 0; top: -.24em;
   width: 1.5px; height: .24em; background: currentColor; opacity: .5;
 }
+/* 复合词的两个音调核之间留一点空 */
+.pitch-gap { display: inline-block; width: .3em; }
 
 /* ============================================================
    home
@@ -329,18 +334,23 @@ rt { font-family: var(--font-ja); font-size: .55em; color: var(--muted); line-he
 .seek {
   grid-area: seek;
   -webkit-appearance: none; appearance: none;
-  width: 100%; height: 4px; border-radius: 99px;
-  background: var(--line-2); cursor: pointer; margin: 0;
+  width: 100%; height: 22px; background: transparent; cursor: pointer; margin: 0;
+  --fill: 0%;
+}
+.seek::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 99px;
+  background: linear-gradient(to right, var(--accent) var(--fill), var(--line-2) var(--fill));
 }
 .seek::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  width: 14px; height: 14px; border-radius: 50%;
-  background: var(--accent); border: 0; cursor: pointer;
+  width: 14px; height: 14px; border-radius: 50%; border: 0;
+  background: var(--accent); cursor: pointer; margin-top: -5px;
   box-shadow: 0 0 0 3px var(--surface);
 }
+.seek::-moz-range-track { height: 4px; border-radius: 99px; background: var(--line-2); }
+.seek::-moz-range-progress { height: 4px; border-radius: 99px; background: var(--accent); }
 .seek::-moz-range-thumb {
-  width: 14px; height: 14px; border: 0; border-radius: 50%;
-  background: var(--accent); cursor: pointer;
+  width: 14px; height: 14px; border: 0; border-radius: 50%; background: var(--accent); cursor: pointer;
 }
 
 /* tabs row */
@@ -359,7 +369,7 @@ rt { font-family: var(--font-ja); font-size: .55em; color: var(--muted); line-he
 .scene + .scene { margin-top: 28px; padding-top: 28px; border-top: 1px dashed var(--line); }
 
 .line {
-  font-family: var(--font-text); font-size: 20px; line-height: 2.3;
+  font-family: var(--font-text); font-size: 22px; line-height: 2.35;
   white-space: pre-wrap; color: var(--ink);
   padding: 5px 0;
   scroll-margin: 90px;
@@ -371,7 +381,7 @@ rt { font-family: var(--font-ja); font-size: .55em; color: var(--muted); line-he
 .line.gap { padding: 0; height: 12px; line-height: 0; }
 
 .tr {
-  font-size: 15px; line-height: 1.85; color: var(--muted);
+  font-size: 16px; line-height: 1.8; color: var(--muted);
   white-space: pre-wrap; padding: 0 0 10px;
   border-left: 2px solid var(--line-2); padding-left: 13px; margin-left: 1px;
   display: none;
@@ -387,19 +397,21 @@ rt { font-family: var(--font-ja); font-size: .55em; color: var(--muted); line-he
   cursor: pointer; break-inside: avoid;
   transition: background .12s;
 }
+/* 没有汉字的词（タバコ、ほか…）少一行读音，补等高留白，两栏的汉字行才能对齐 */
+.word-row.no-kana { padding-top: 39px; }
 .word-row:hover { background: color-mix(in srgb, var(--accent-bg) 40%, transparent); }
 .word-row .kanji {
-  font-family: var(--font-ja); font-size: 20px; font-weight: 600;
+  font-family: var(--font-ja); font-size: 21px; font-weight: 600;
   display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
   line-height: 1.5;
 }
 .word-row .kanji .w { display: inline-block; }
 .word-row .kana {
-  font-family: var(--font-ja); font-size: 15.5px; color: var(--muted);
+  font-family: var(--font-ja); font-size: 16px; color: var(--muted);
   line-height: 1.4; margin-bottom: 5px;
 }
 .word-row .desc {
-  font-size: 15.5px; color: var(--muted); line-height: 1.65; margin-top: 3px;
+  font-size: 16px; color: var(--muted); line-height: 1.65; margin-top: 3px;
 }
 .word-row .pos {
   font-size: 11.5px; color: var(--accent); background: var(--accent-bg);
@@ -415,7 +427,7 @@ rt { font-family: var(--font-ja); font-size: .55em; color: var(--muted); line-he
 .g-item { padding: 18px 0; border-bottom: 1px solid var(--line); }
 .g-item:last-child { border-bottom: 0; }
 .g-item .exp {
-  font-family: var(--font-ja); font-size: 17.5px; font-weight: 600; color: var(--ink);
+  font-family: var(--font-ja); font-size: 18.5px; font-weight: 600; color: var(--ink);
   white-space: pre-wrap;
 }
 .g-item .short {
@@ -424,7 +436,7 @@ rt { font-family: var(--font-ja); font-size: .55em; color: var(--muted); line-he
   margin-left: 9px; vertical-align: 3px; font-weight: 500;
 }
 .g-item .exp-zh {
-  font-size: 15px; color: var(--ink-2); margin-top: 8px;
+  font-size: 16px; color: var(--ink-2); margin-top: 8px;
   line-height: 1.85; white-space: pre-wrap;
 }
 
@@ -463,14 +475,14 @@ select.sel {
 }
 .wtable td {
   padding: 11px 12px; border-bottom: 1px solid var(--line);
-  font-size: 15px; vertical-align: baseline;
+  font-size: 16px; vertical-align: baseline;
 }
 .wtable tr { transition: background .12s; }
 .wtable tbody tr:hover { background: var(--surface-2); cursor: pointer; }
 .wtable .c-kana { font-family: var(--font-ja); width: 21%; }
-.wtable .c-kanji { font-family: var(--font-ja); font-size: 18px; font-weight: 600; width: 23%; }
+.wtable .c-kanji { font-family: var(--font-ja); font-size: 19px; font-weight: 600; width: 23%; }
 .wtable .c-pos { width: 68px; color: var(--muted); font-size: 13px; }
-.wtable .c-desc { color: var(--ink-2); font-size: 14.5px; }
+.wtable .c-desc { color: var(--ink-2); font-size: 15.5px; }
 .wtable .c-l { width: 52px; color: var(--faint); font-size: 12.5px; text-align: right; font-variant-numeric: tabular-nums; }
 
 .pager {
@@ -492,37 +504,97 @@ select.sel {
 /* ============================================================
    flash cards
    ============================================================ */
-.cards-wrap { max-width: 580px; margin: 0 auto; }
-.card-stage { margin: 24px 0 20px; }
-.flashcard {
-  position: relative; width: 100%; min-height: 280px; border-radius: 20px;
-  background: var(--surface); border: 1px solid var(--line);
-  box-shadow: var(--shadow);
-  display: grid; place-items: center; padding: 38px;
-  cursor: pointer; transition: border-color .2s;
-  text-align: center;
+.cards-wrap { max-width: 640px; margin: 0 auto; }
+.cards-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 14px;
 }
-.flashcard:hover { border-color: var(--line-2); }
-.flashcard .face { display: none; flex-direction: column; align-items: center; gap: 14px; }
-.flashcard .face.on { display: flex; }
-.flashcard .front-word {
-  font-family: var(--font-ja); font-size: 40px; font-weight: 600; line-height: 1.45;
-}
-.flashcard .front-desc { font-size: 15px; color: var(--muted); }
-.flashcard .back-kana {
-  font-family: var(--font-ja); font-size: 34px; color: var(--ink);
-}
-.flashcard .hint {
-  position: absolute; bottom: 15px; left: 0; right: 0; text-align: center;
-  font-size: 12px; color: var(--faint);
-}
-.card-actions { display: flex; gap: 12px; justify-content: center; }
-.card-actions .btn { height: 44px; padding: 0 26px; font-size: 14.5px; border-radius: 10px; }
-.card-stat {
-  display: flex; align-items: center; justify-content: center; gap: 14px;
-  font-size: 13px; color: var(--faint); margin-top: 16px;
+.cards-bar .count {
+  margin-left: auto; font-size: 14px; color: var(--faint);
   font-variant-numeric: tabular-nums;
 }
+.card-progress {
+  height: 2px; background: var(--line); border-radius: 99px;
+  overflow: hidden; margin-bottom: 18px;
+}
+.card-progress i {
+  display: block; height: 100%; background: var(--accent);
+  transition: width .3s ease;
+}
+
+.card-stage { perspective: 1800px; }
+.flashcard {
+  position: relative; min-height: 400px; cursor: pointer;
+  transform-style: preserve-3d;
+  transition: transform .5s cubic-bezier(.2,.7,.3,1);
+}
+.flashcard.flipped { transform: rotateY(180deg); }
+.flashcard .face {
+  position: absolute; inset: 0; overflow: auto;
+  border-radius: 20px; background: var(--surface);
+  border: 1px solid var(--line); box-shadow: var(--shadow);
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  display: flex; flex-direction: column;
+}
+.flashcard .face.front {
+  align-items: center; justify-content: center;
+  padding: 40px 32px; text-align: center;
+}
+.flashcard .face.back {
+  transform: rotateY(180deg);
+  padding: 26px 30px; text-align: left;
+}
+
+.front-ja {
+  font-family: var(--font-ja); font-weight: 600;
+  line-height: 1.45; color: var(--ink);
+}
+.front-cn { color: var(--ink); line-height: 1.5; font-weight: 500; }
+.speak-big {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  color: var(--muted); padding: 22px 30px; border-radius: 999px;
+  border: 1px solid var(--line-2); background: var(--surface-2);
+  font-size: 14.5px; transition: color .15s, border-color .15s;
+}
+.speak-big:hover { color: var(--accent); border-color: var(--accent); }
+
+.back-top { display: flex; gap: 8px; flex-shrink: 0; }
+.back-top .pos {
+  font-size: 12.5px; color: var(--accent); background: var(--accent-bg);
+  padding: 2px 8px; border-radius: 5px; font-weight: 500;
+}
+.back-main {
+  flex: 1; display: flex; flex-direction: column;
+  justify-content: center; gap: 18px; min-height: 0;
+}
+.back-kanji {
+  font-family: var(--font-ja); font-size: 30px; color: var(--muted);
+  line-height: 1.35;
+}
+.back-kana { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.kana-big {
+  font-family: var(--font-ja); font-size: 36px; color: var(--ink); line-height: 1.35;
+}
+.speak-btn { color: var(--faint); padding: 7px; border-radius: 8px; }
+.speak-btn:hover { color: var(--accent); background: var(--surface-2); }
+.pitch-num {
+  font-size: 24px; font-weight: 600; color: var(--accent);
+  line-height: 1; margin-bottom: 5px; font-variant-numeric: tabular-nums;
+}
+.back-line { height: 1px; background: var(--line); margin: 16px 0; flex-shrink: 0; }
+.back-meaning { font-size: 20px; color: var(--ink-2); line-height: 1.65; }
+
+.done { text-align: center; }
+.done-title { font-family: var(--font-ja); font-size: 26px; color: var(--ink); }
+.done-sub { margin-top: 10px; color: var(--muted); font-size: 15px; }
+
+.card-actions {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; margin-top: 20px;
+}
+.card-actions .btn { height: 46px; padding: 0 28px; font-size: 15px; border-radius: 10px; }
+.card-actions .btn-sm { height: 36px; padding: 0 14px; font-size: 13.5px; }
+.card-hint { text-align: center; margin-top: 14px; font-size: 13px; color: var(--faint); }
 
 /* ---------- responsive ---------- */
 @media (min-width: 1080px) {
@@ -610,9 +682,14 @@ select.sel {
   .g-item .exp { font-size: 16.5px; }
   .g-item .exp-zh { font-size: 14.5px; }
 
-  .flashcard { min-height: 240px; padding: 28px 20px; }
-  .flashcard .front-word { font-size: 32px; }
-  .flashcard .back-kana { font-size: 28px; }
+  .flashcard { min-height: 320px; }
+  .flashcard .face.front { padding: 30px 20px; }
+  .flashcard .face.back { padding: 20px 22px; }
+  .back-kanji { font-size: 24px; }
+  .kana-big { font-size: 30px; }
+  .back-meaning { font-size: 18px; }
+  .card-actions .btn { height: 42px; padding: 0 22px; }
+  .cards-bar .count { margin-left: 0; width: 100%; text-align: right; }
 
   .pager.lesson-nav { gap: 10px; }
   .pager.lesson-nav .btn { padding: 0 12px; font-size: 13px; }

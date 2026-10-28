@@ -157,13 +157,19 @@ await check('中级语法分组', `document.querySelectorAll('.gpage-item').leng
 
 /* ---------- 背单词 ---------- */
 await go('#/cards?ref=001');
-await check('卡片有词', `document.querySelector('#front .front-word')?.textContent.length > 0`, true);
-await check('翻面', `(document.querySelector('#card').click(), 1)`);
+await check('卡片有词', `!!document.querySelector('#front .front-cn, #front .front-ja')`);
+await check('默认「揭晓」按钮', `document.querySelector('#action').textContent.trim()`, '揭晓');
+await check('揭晓翻面', `(document.querySelector('#action').click(), 1)`);
 await sleep(200);
-await check('背面显示假名', `document.querySelector('#back').classList.contains('on')`, true);
-await check('标记记住', `(document.querySelector('#known').click(), 1)`);
-await sleep(300);
-await check('已记住计数', `document.querySelector('#stat2').textContent.includes('已记住 1')`, true);
+await check('卡片已翻到背面', `document.querySelector('#card').classList.contains('flipped')`, true);
+await check('背面有假名与释义', `!!document.querySelector('#back .kana-big') && !!document.querySelector('#back .back-meaning')`);
+await check('背面有声调数字', `!!document.querySelector('#back .pitch-num')`);
+await check('下一张', `(document.querySelector('#action').click(), 1)`);
+await sleep(200);
+await check('计数走到第二个', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('2 /'));
+await check('切到假名模式', `(document.querySelector('#modes [data-mode=kana]').click(), 1)`);
+await sleep(200);
+await check('假名模式正面是假名', `document.querySelector('#front .front-ja') !== null`, true);
 
 /* ---------- 主题 ---------- */
 await check('切主题', `(document.querySelector('#themeBtn').click(), document.documentElement.dataset.theme)`, (v) => ['auto', 'light', 'dark'].includes(v));

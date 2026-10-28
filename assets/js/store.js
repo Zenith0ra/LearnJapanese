@@ -1,7 +1,6 @@
-/** 本地状态：主题、阅读偏好、背单词进度 */
+/** 本地状态：主题与阅读偏好 */
 
 const KEY_THEME = 'lj.theme';
-const KEY_WORDS = 'lj.remembered';
 const KEY_PREFS = 'lj.prefs';
 
 const read = (k, dflt) => {
@@ -27,28 +26,6 @@ export function cycleTheme() {
   const next = order[(order.indexOf(getTheme()) + 1) % order.length];
   setTheme(next);
   return next;
-}
-
-/* ---------- 已记住的单词（背单词用） ---------- */
-let wordCache = null;
-const wordKey = (w) => `${w.ref}|${w.idx}`;
-
-export function wordMap() {
-  if (!wordCache) wordCache = read(KEY_WORDS, {});
-  return wordCache;
-}
-export function isKnown(w) {
-  return !!wordMap()[wordKey(w)];
-}
-export function setKnown(w, known) {
-  const m = wordMap();
-  if (known) m[wordKey(w)] = 1;
-  else delete m[wordKey(w)];
-  write(KEY_WORDS, m);
-}
-export function knownCount(words) {
-  const m = wordMap();
-  return words.reduce((n, w) => n + (m[wordKey(w)] ? 1 : 0), 0);
 }
 
 /* ---------- 阅读偏好 ---------- */
