@@ -1,0 +1,13 @@
+{
+  "name": "learn-japan",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "新标准日本语学习站：课文、注音、译文、单词、语法、背单词",
+  "scripts": {
+    "data": "node scripts/build-data.mjs",
+    "serve": "node scripts/serve.mjs 8321",
+    "shot": "node scripts/shot.mjs .shots 1440x900"
+  },
+  "license": "MIT"
+}

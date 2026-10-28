@@ -1,0 +1,171 @@
+#!/usr/bin/env node
+/**
+ * 交互冒烟测试：真的去点按钮，收集 JS 异常。
+ * 用法：node scripts/smoke.mjs [baseUrl]
+ */
+import { spawn } from 'node:child_process';
+import { existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
+
+const BASE = process.argv[2] ?? 'http://127.0.0.1:8321';
+const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
+const PORT = 9334;
+const PROFILE = join(process.env.TEMP ?? '.', 'lj-smoke-profile');
+if (!existsSync(PROFILE)) mkdirSync(PROFILE, { recursive: true });
+
+const chrome = spawn(CHROME, [
+  '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+  '--user-data-dir=' + PROFILE, `--remote-debugging-port=${PORT}`, 'about:blank',
+], { stdio: 'ignore' });
+
+const waitFor = async (fn, tries = 60) => {
+  for (let i = 0; i < tries; i++) {
+    try { const v = await fn(); if (v) return v; } catch { /* retry */ }
+    await sleep(150);
+  }
+  throw new Error('CDP 未就绪');
+};
+
+const targets = await waitFor(async () => {
+  const j = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
+  return j.find((t) => t.type === 'page') ? j : null;
+});
+const ws = new WebSocket(targets.find((t) => t.type === 'page').webSocketDebuggerUrl);
+await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
+
+let id = 0;
+const pending = new Map();
+const errors = [];
+ws.onmessage = (m) => {
+  const msg = JSON.parse(m.data);
+  if (msg.id && pending.has(msg.id)) {
+    const { res, rej } = pending.get(msg.id);
+    pending.delete(msg.id);
+    msg.error ? rej(new Error(msg.error.message)) : res(msg.result);
+  } else if (msg.method === 'Runtime.exceptionThrown') {
+    const d = msg.params.exceptionDetails;
+    errors.push(`异常: ${d.exception?.description ?? d.text} @${d.url ?? ''}:${d.lineNumber ?? ''}`);
+  } else if (msg.method === 'Runtime.consoleAPICalled' && msg.params.type === 'error') {
+    errors.push('console.error: ' + msg.params.args.map((a) => a.value ?? a.description).join(' '));
+  }
+};
+const send = (method, params = {}) => new Promise((res, rej) => {
+  const n = ++id;
+  pending.set(n, { res, rej });
+  ws.send(JSON.stringify({ id: n, method, params }));
+});
+
+await send('Runtime.enable');
+await send('Page.enable');
+await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+
+const evaluate = async (expr) => {
+  const r = await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+  if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description ?? r.exceptionDetails.text);
+  return r.result.value;
+};
+
+const go = async (hash) => {
+  // 先回 about:blank，强制整页重载：否则只改 hash 不会重新执行模块，
+  // localStorage 的内存缓存会带着上一次的状态，测试结果不稳定。
+  await send('Page.navigate', { url: 'about:blank' });
+  await sleep(120);
+  await send('Page.navigate', { url: `${BASE}/${hash}` });
+  await sleep(1200);
+};
+
+const results = [];
+const check = async (name, expr, expect = (v) => !!v) => {
+  // 渲染是异步的：轮询到条件成立，但点击类表达式只执行一次（避免重复触发）
+  const once = expr.includes('.click(');
+  let v;
+  for (let i = 0; i < (once ? 1 : 20); i++) {
+    v = await evaluate(expr);
+    const ok = typeof expect === 'function' ? expect(v) : v === expect;
+    if (ok) { results.push({ name, ok: true, got: v }); return; }
+    if (once) break;
+    await sleep(150);
+  }
+  const ok = typeof expect === 'function' ? expect(v) : v === expect;
+  results.push({ name, ok, got: v });
+};
+
+/* ---------- 首页 ---------- */
+await go('#/');
+await evaluate('localStorage.clear()');   // 清掉上一次跑测试留下的进度
+await go('#/');
+await check('首页渲染课程卡片', `document.querySelectorAll('.lesson-card').length`, (n) => n === 48);
+await check('切到中级', `(document.querySelector('[data-level=middle]').click(), 1)`);
+await sleep(600);
+await check('中级 32 课', `document.querySelectorAll('.lesson-card').length`, (n) => n === 32);
+await check('切回初级', `(document.querySelector('[data-level=basic]').click(), 1)`);
+await sleep(500);
+
+/* ---------- 课文页 ---------- */
+await go('#/lesson/l1');
+await check('课文标题', `document.querySelector('.lesson-head h1').textContent.includes('中国人')`, true);
+await check('基本课文行数', `document.querySelectorAll('#pane .line').length`, (n) => n >= 4);
+await check('点生词标签', `(document.querySelector('[data-tab=words]').click(), 1)`);
+await sleep(900);
+await check('生词渲染', `document.querySelectorAll('#pane .word-row').length`, (n) => n === 56);
+await check('音调线存在', `document.querySelectorAll('#pane .pitch .mora.h').length`, (n) => n > 0);
+await check('点语法标签', `(document.querySelector('[data-tab=grammar]').click(), 1)`);
+await sleep(700);
+await check('语法渲染', `document.querySelectorAll('#pane .g-item').length`, (n) => n === 5);
+await check('回课文', `(document.querySelector('[data-tab="0"]').click(), 1)`);
+await sleep(400);
+await check('关注音', `(document.querySelector('#optRuby').click(), 1)`);
+await check('注音已隐藏', `getComputedStyle(document.querySelector('#pane .rb-r')).visibility`, 'hidden');
+await check('开译文', `(document.querySelector('#optTr').click(), 1)`);
+await check('译文可见', `document.querySelectorAll('#pane .tr').length`, (n) => n >= 4);
+await check('标为已学', `(document.querySelector('#doneBtn').click(), 1)`);
+await check('已学按钮文案', `document.querySelector('#doneBtn').textContent.trim()`, '✓ 已学');
+await check('进度写入本地', `JSON.parse(localStorage.getItem('lj.learned')).length`, (n) => n >= 1);
+
+/* ---------- 翻页 ---------- */
+await check('下一课链接', `!!document.querySelector('.pager.lesson-nav a[href="#/lesson/l2"]')`, true);
+await go('#/lesson/l48');
+await check('末课连接到中级第 1 课', `document.querySelector('.pager.lesson-nav a[href="#/lesson/m1"]') !== null`);
+
+/* ---------- 单词页 ---------- */
+await go('#/words');
+await check('单词表行数', `document.querySelectorAll('#tbody tr').length`, 80);
+await check('分页有 72 页', `document.querySelector('#pager .count').textContent.trim()`, '1 / 72');
+await check('搜索「先生」', `(() => { const i = document.querySelector('#q'); i.value='先生'; i.dispatchEvent(new Event('input',{bubbles:true})); return 1; })()`);
+await sleep(500);
+await check('搜索结果变少', `document.querySelectorAll('#tbody tr').length`, (n) => n > 0 && n < 80);
+await check('翻页', `(document.querySelector('#pager button[data-p="1"]')?.click(), 1)`);
+
+/* ---------- 语法页 ---------- */
+await go('#/grammar');
+await check('语法分组', `document.querySelectorAll('.gpage-item').length`, (n) => n > 20);
+await check('切中级语法', `(document.querySelector('#lv [data-v=middle]').click(), 1)`);
+await sleep(400);
+await check('中级语法分组', `document.querySelectorAll('.gpage-item').length`, (n) => n > 10);
+
+/* ---------- 背单词 ---------- */
+await go('#/cards?ref=001');
+await check('卡片有词', `document.querySelector('#front .front-word')?.textContent.length > 0`, true);
+await check('翻面', `(document.querySelector('#card').click(), 1)`);
+await sleep(200);
+await check('背面显示假名', `document.querySelector('#back').classList.contains('on')`, true);
+await check('标记记住', `(document.querySelector('#known').click(), 1)`);
+await sleep(300);
+await check('已记住计数', `document.querySelector('#stat').textContent.includes('已记住 1')`, true);
+
+/* ---------- 主题 ---------- */
+await check('切主题', `(document.querySelector('#themeBtn').click(), document.documentElement.dataset.theme)`, (v) => ['auto', 'light', 'dark'].includes(v));
+
+/* ---------- 汇报 ---------- */
+const bad = results.filter((r) => !r.ok);
+console.log('\n冒烟测试：');
+for (const r of results) console.log(`  ${r.ok ? '✓' : '✗'} ${r.name}${r.ok ? '' : ' → ' + JSON.stringify(r.got)}`);
+console.log(`\n通过 ${results.length - bad.length}/${results.length}`);
+if (errors.length) {
+  console.log('\nJS 错误：');
+  [...new Set(errors)].slice(0, 15).forEach((e) => console.log('  ! ' + e));
+}
+ws.close();
+chrome.kill();
+process.exit(bad.length || errors.length ? 1 : 0);
