@@ -1,5 +1,5 @@
 /** 单词总表 */
-import { ja, pitch, speakable } from '../ruby.js';
+import { pitch, plain, speakable } from '../ruby.js';
 import { lessonsAll, wordsAll } from '../data.js';
 import * as audio from '../audio.js';
 import { esc, debounce } from '../util.js';
@@ -14,10 +14,8 @@ export async function render(root) {
 
   root.innerHTML = `
     <div class="crumb"><a href="#/">课程</a><span>/</span><span>单词</span></div>
-    <header class="hero" style="padding-bottom:22px;border-bottom:0;margin-bottom:8px">
-      <p class="eyebrow">Word list</p>
-      <h1 style="font-size:28px">单词总表</h1>
-      <p>${words.length.toLocaleString()} 个词条 · 带音调标记 · 点词朗读</p>
+    <header class="hero slim">
+      <h1>单词总表</h1>
     </header>
 
     <div class="filters">
@@ -85,7 +83,10 @@ export async function render(root) {
     tbody.innerHTML = slice.map((w) => `
       <tr data-read="${esc(speakable(w.kana))}">
         <td class="c-kana">${pitch(w.kana)}</td>
-        <td class="c-kanji">${ja(w.word || w.kanji || '—')}</td>
+        <td class="c-kanji">${(() => {
+          const surface = plain(w.word || w.kanji) || '';
+          return surface === speakable(w.kana) ? '' : esc(surface);
+        })()}</td>
         <td class="c-pos">${esc(w.pos)}</td>
         <td class="c-desc">${esc(w.desc)}</td>
         <td class="c-l"><a href="#/lesson/${w.level === 'basic' ? 'l' : 'm'}${w.num}" style="color:var(--muted)">${w.num}</a></td>

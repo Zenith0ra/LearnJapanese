@@ -106,9 +106,22 @@ await sleep(500);
 await go('#/lesson/l1');
 await check('课文标题', `document.querySelector('.lesson-head h1').textContent.includes('中国人')`, true);
 await check('基本课文行数', `document.querySelectorAll('#pane .line').length`, (n) => n >= 4);
+await check('有进度条', `!!document.querySelector('#seek')`);
+await check('时间显示', `document.querySelector('#time').textContent.includes('/')`);
+await check('默认倍速 1×', `document.querySelector('#speedBtn').textContent.trim()`, '1×');
+await check('点倍速到 1.25×', `(document.querySelector('#speedBtn').click(), 1)`);
+await sleep(150);
+await check('倍速文案 1.25×', `document.querySelector('#speedBtn').textContent.trim()`, '1.25×');
+await check('拖动进度条更新时长', `(() => {
+  const s = document.querySelector('#seek');
+  s.value = '500';
+  s.dispatchEvent(new Event('input', { bubbles: true }));
+  return document.querySelector('#time').textContent;
+})()`, (v) => v.includes('/') && !v.startsWith('0:00'));
 await check('点生词标签', `(document.querySelector('[data-tab=words]').click(), 1)`);
 await sleep(900);
 await check('生词渲染', `document.querySelectorAll('#pane .word-row').length`, (n) => n === 56);
+await check('生词两栏（宽屏）', `getComputedStyle(document.querySelector('.word-list')).columnCount`, '2');
 await check('音调线存在', `document.querySelectorAll('#pane .pitch .mora.h').length`, (n) => n > 0);
 await check('点语法标签', `(document.querySelector('[data-tab=grammar]').click(), 1)`);
 await sleep(700);
@@ -119,9 +132,7 @@ await check('关注音', `(document.querySelector('#optRuby').click(), 1)`);
 await check('注音已隐藏', `getComputedStyle(document.querySelector('#pane .rb-r')).visibility`, 'hidden');
 await check('开译文', `(document.querySelector('#optTr').click(), 1)`);
 await check('译文可见', `document.querySelectorAll('#pane .tr').length`, (n) => n >= 4);
-await check('标为已学', `(document.querySelector('#doneBtn').click(), 1)`);
-await check('已学按钮文案', `document.querySelector('#doneBtn').textContent.trim()`, '✓ 已学');
-await check('进度写入本地', `JSON.parse(localStorage.getItem('lj.learned')).length`, (n) => n >= 1);
+await check('课文页不再有“标记已学”', `document.querySelector('#doneBtn') === null`, true);
 
 /* ---------- 翻页 ---------- */
 await check('下一课链接', `!!document.querySelector('.pager.lesson-nav a[href="#/lesson/l2"]')`, true);
@@ -152,7 +163,7 @@ await sleep(200);
 await check('背面显示假名', `document.querySelector('#back').classList.contains('on')`, true);
 await check('标记记住', `(document.querySelector('#known').click(), 1)`);
 await sleep(300);
-await check('已记住计数', `document.querySelector('#stat').textContent.includes('已记住 1')`, true);
+await check('已记住计数', `document.querySelector('#stat2').textContent.includes('已记住 1')`, true);
 
 /* ---------- 主题 ---------- */
 await check('切主题', `(document.querySelector('#themeBtn').click(), document.documentElement.dataset.theme)`, (v) => ['auto', 'light', 'dark'].includes(v));

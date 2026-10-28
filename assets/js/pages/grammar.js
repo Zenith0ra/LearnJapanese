@@ -9,10 +9,8 @@ export async function render(root) {
 
   root.innerHTML = `
     <div class="crumb"><a href="#/">课程</a><span>/</span><span>语法</span></div>
-    <header class="hero" style="padding-bottom:22px;border-bottom:0;margin-bottom:8px">
-      <p class="eyebrow">Grammar</p>
-      <h1 style="font-size:28px">语法总表</h1>
-      <p>${all.length} 条句型与表达 · 按课次排列</p>
+    <header class="hero slim">
+      <h1>语法总表</h1>
     </header>
 
     <div class="filters">

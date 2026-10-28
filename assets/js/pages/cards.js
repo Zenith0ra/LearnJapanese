@@ -15,10 +15,9 @@ export async function render(root) {
   root.innerHTML = `
     <div class="cards-wrap">
       <div class="crumb"><a href="#/">课程</a><span>/</span><span>背单词</span></div>
-      <header class="hero" style="padding-bottom:18px;border-bottom:0;margin-bottom:14px">
-        <p class="eyebrow">Flash cards</p>
-        <h1 style="font-size:28px">背单词</h1>
-        <p>${scopeLesson ? `${scopeLesson.level === 'basic' ? '初级' : '中级'} 第 ${scopeLesson.num} 課 · 本课生词` : '看汉字想读音，看中文想日文'}</p>
+      <header class="hero slim">
+        <h1>背单词</h1>
+        ${scopeLesson ? `<p class="muted" style="margin-top:6px">${scopeLesson.level === 'basic' ? '初级' : '中级'} 第 ${scopeLesson.num} 課 · 本课生词</p>` : ''}
       </header>
 
       <div class="filters">
@@ -29,7 +28,6 @@ export async function render(root) {
           <option value="middle">中级</option>
         </select>
         <label class="switch">只练未记住<input type="checkbox" id="onlyNew" checked><span class="track"></span></label>
-        <span class="count" id="stat"></span>
       </div>
 
       <div class="card-stage">
@@ -82,11 +80,13 @@ export async function render(root) {
   function paint() {
     const w = current();
     const total = state.deck.length;
-    root.querySelector('#stat').textContent = total ? `${Math.min(state.i + 1, total)} / ${total} · 已记住 ${knownCount(words)}` : '';
-    root.querySelector('#stat2').textContent = total ? '' : '这个范围里的词都记住了 🎉';
+    const known = knownCount(words);
+    root.querySelector('#stat2').textContent = total
+      ? `${Math.min(state.i + 1, total)} / ${total}　已记住 ${known}`
+      : '这个范围里的词都记住了 🎉';
 
     if (!w) {
-      front.innerHTML = `<div class="front-word" style="font-size:22px">这一组已完成</div>
+      front.innerHTML = `<div class="front-word" style="font-size:24px">这一组已完成</div>
         <div class="front-desc">共 ${total} 个词</div>`;
       back.classList.remove('on');
       front.classList.add('on');

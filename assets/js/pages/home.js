@@ -1,10 +1,7 @@
 /** 首页：课程目录 */
-import { ja, plain } from '../ruby.js';
+import { ja } from '../ruby.js';
 import { lessonsAll } from '../data.js';
-import { isLearned, learnedCount, prefs, setPref } from '../store.js';
-import { esc } from '../util.js';
-
-const LEVEL_NAME = { basic: '初级', middle: '中级' };
+import { prefs, setPref } from '../store.js';
 
 export async function render(root) {
   const { index } = await lessonsAll();
@@ -12,24 +9,13 @@ export async function render(root) {
   const list = index.filter((l) => l.level === level);
 
   const units = [...new Set(list.map((l) => l.unit))];
-  const done = learnedCount(level);
-  const nextUp = list.find((l) => !isLearned(l.id)) ?? list[0];
 
   root.innerHTML = `
     <section class="hero">
-      <p class="eyebrow">新标准日本语 · 初级 48 课 + 中级 32 课</p>
-      <h1>一課一課，把课文读透</h1>
-      <p>全文注音 · 中日对照 · 逐课音频 · 5,751 个单词 · 607 条语法</p>
-      <div class="hero-row">
-        <div class="seg" id="levelSeg">
-          <button data-level="basic" class="${level === 'basic' ? 'on' : ''}">初级 · 48 課</button>
-          <button data-level="middle" class="${level === 'middle' ? 'on' : ''}">中级 · 32 課</button>
-        </div>
-        <div class="progress">
-          <span class="num">已学 ${done} / ${list.length}</span>
-          <span class="bar"><i style="width:${(done / list.length) * 100}%"></i></span>
-          <a class="btn btn-sm" href="#/lesson/${nextUp.id}">继续 第 ${nextUp.num} 課</a>
-        </div>
+      <h1>标准日本语</h1>
+      <div class="seg" id="levelSeg">
+        <button data-level="basic" class="${level === 'basic' ? 'on' : ''}">初级</button>
+        <button data-level="middle" class="${level === 'middle' ? 'on' : ''}">中级</button>
       </div>
     </section>
     <div id="units"></div>
@@ -60,10 +46,8 @@ export async function render(root) {
 }
 
 function card(l) {
-  const done = isLearned(l.id);
   return `
-    <a class="lesson-card${done ? ' done' : ''}" href="#/lesson/${l.id}">
-      ${done ? '<span class="tick">✓</span>' : ''}
+    <a class="lesson-card" href="#/lesson/${l.id}">
       <span class="n">第 ${l.num} 課</span>
       <span class="t">${ja(l.title)}</span>
       <span class="m">
@@ -72,5 +56,3 @@ function card(l) {
       </span>
     </a>`;
 }
-
-export const title = (l) => plain(l.title);

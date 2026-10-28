@@ -15,14 +15,14 @@
 
 ## 页面
 
-- `#/` 课程目录（初级 / 中级切换、学习进度、继续学习）
-- `#/lesson/l1` 课文页：注音开关、译文对照、音频（常速 / 0.8× / 0.6× / −2s）、生词、语法
+- `#/` 课程目录：初级 / 中级切换，按单元排列
+- `#/lesson/l1` 课文页：注音开关、译文对照、音频（进度条拖动 + 1× / 1.25× / 1.5× / 2×）、生词（宽屏两栏）、语法
 - `#/lesson/l1?tab=words&tr=1&ruby=0` 可深链到任意标签页与显示状态
 - `#/words` 单词总表：搜索、按级别 / 课次筛选
 - `#/grammar` 语法总表：搜索、按课次分组
 - `#/cards` 背单词：翻转卡片、键盘操作（空格翻面 / ← 不熟 / → 记住）
 
-学习进度、已记住的词、注音与译文偏好都存在浏览器 localStorage，不需要后端。
+背单词的「已记住」与注音 / 译文偏好存在浏览器 localStorage，不需要后端。
 
 ## 目录
 
@@ -32,7 +32,7 @@ assets/app.css        全部样式（浅色 / 深色）
 assets/js/app.js      路由与主题
 assets/js/data.js     数据加载
 assets/js/ruby.js     注音与音调渲染
-assets/js/store.js    本地进度
+assets/js/store.js    主题与本地偏好
 assets/js/audio.js    音频与朗读
 assets/js/pages/      各页面
 data/*.json           由 _data 转换出的站点数据

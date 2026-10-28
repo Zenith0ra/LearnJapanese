@@ -43,6 +43,7 @@ async function route() {
   }
 
   setNav(hit.nav);
+  document.body.classList.toggle('at-home', clean === '/' || clean === '');
   app.innerHTML = '<div class="panel muted">载入中…</div>';
   try {
     const arg = hit.arg ? clean.match(hit.re)[hit.arg] : undefined;
