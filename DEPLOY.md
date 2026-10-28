@@ -163,7 +163,53 @@ npm run serve     # http://127.0.0.1:8321/
 
 ---
 
-## 8. 一句话版本
+## 8. 以后改域名要动什么
+
+### A. 换成另一个域名 / 子域名（仍是独立站点，挂在根路径）
+
+代码里**没有硬编码任何域名**，所以只动三处配置 + 一处 DNS：
+
+| # | 在哪里 | 改成什么 |
+| --- | --- | --- |
+| 1 | 仓库根目录 `CNAME` 文件 | 新域名，一行，不带 `https://`、不带结尾 `/` |
+| 2 | GitHub 仓库 Settings → Pages → **Custom domain** | 新域名 → Save |
+| 3 | 域名商 DNS | 新域名加 `CNAME → zenith0ra.github.io`（子域名）或 A 记录（根域名） |
+| 4 | 同一页面的 **Enforce HTTPS** | 等证书签发后重新勾选 |
+
+改完要重新等一次 DNS 检查 + 证书签发。旧域名的解析可以留着（仍然指向本仓库），也可以删掉。
+
+> GitHub Pages 在境外，域名只要实名过即可，不涉及 ICP 备案。
+
+### B. 换成某个站点的子路径（例如 `blog.houlinzhi.com/japanese/`）
+
+这种情况**不能**只改配置，还得改代码里的路径：
+
+1. 删掉仓库根目录的 `CNAME` 文件（否则 GitHub 仍按独立站点对待）
+2. 把站点文件放进目标站点的 `japanese/` 目录
+3. 把下面 4 处**绝对路径**改成相对路径：
+
+| 文件 | 现在 | 改成 |
+| --- | --- | --- |
+| `index.html` | `href="/assets/app.css"` | `href="assets/app.css"` |
+| `index.html` | `src="/assets/js/app.js"` | `src="assets/js/app.js"` |
+| `assets/js/data.js` | ``fetch(`/data/${name}.json`)`` | ``fetch(`data/${name}.json`)`` |
+| `assets/js/pages/lesson.js` | ``srcOf = … `/audio/lesson/…` `` | 去掉开头的 `/` |
+
+站点用的是 hash 路由（`#/lesson/l1`），页面地址始终是 `index.html`，改成相对路径后任意子目录都能跑。
+
+### C. 文档里的域名
+
+`README.md`、`DEPLOY.md` 里出现的 `jp.houlinzhi.com` 只是说明文字，改不改都不影响运行，顺手替换一下即可。
+
+### D. 顺带要知道的
+
+- **换域名后旧地址会失效**：GitHub Pages 不支持自定义 301 跳转。要保留旧地址跳转，得在 DNS 前面挂 Cloudflare 做 Redirect Rule。
+- **如果接了 Cloudflare 代理**：CNAME 指向 `zenith0ra.github.io` 时，橙色云（Proxied）会挡住 GitHub 的证书签发，先设成灰色云（DNS only）等证书签好再考虑开代理。
+- **换平台**（Cloudflare Pages / Netlify / Vercel）：同样是纯静态，构建命令留空、输出目录 `/`，删掉 `CNAME`，域名在平台侧配。
+
+---
+
+## 9. 一句话版本
 
 建仓库 `LearnJapanese` → `git push` → Pages 选 `main` + `/ (root)` →
 DNS 加 `jp` CNAME 指向 `zenith0ra.github.io` → Pages 填 Custom domain 并勾 HTTPS → 打开
