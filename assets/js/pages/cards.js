@@ -1,8 +1,9 @@
-/** 背单词：翻卡背诵（参考 portfolio 的 Vocab Cards：四种出题方向 + 3D 翻转 + 进度） */
+/** 背单词：翻卡背诵（四种出题方向 + 轻量淡入切换） */
 import { pitch, plain } from '../ruby.js';
 import { lessonsAll, wordsAll } from '../data.js';
 import * as audio from '../audio.js';
 import { esc } from '../util.js';
+import { dropdown } from '../ui/dropdown.js';
 
 const MODES = [
   { id: 'cn', label: '中文' },
@@ -21,10 +22,10 @@ const pitchNum = (w) => {
 export async function render(root) {
   const [{ index }, words] = await Promise.all([lessonsAll(), wordsAll()]);
   const ref = new URLSearchParams(location.hash.split('?')[1] ?? '').get('ref');
-  const scopeLesson = ref ? index.find((l) => l.ref === ref) : null;
+  const fromLesson = ref ? index.find((l) => l.ref === ref) : null;
 
   const state = {
-    scope: ref ? 'ref' : 'all',
+    scope: fromLesson ? `${fromLesson.level}:${fromLesson.num}` : 'all',
     mode: 'cn',
     deck: [],
     i: 0,
@@ -33,19 +34,12 @@ export async function render(root) {
 
   root.innerHTML = `
     <div class="cards-wrap">
-      <div class="crumb"><a href="#/">课程</a><span>/</span><span>背单词</span></div>
       <header class="hero slim">
         <h1>背单词</h1>
-        ${scopeLesson ? `<p class="muted" style="margin-top:6px">${scopeLesson.level === 'basic' ? '初级' : '中级'} 第 ${scopeLesson.num} 課</p>` : ''}
       </header>
 
       <div class="cards-bar">
-        <select class="sel" id="scope">
-          ${scopeLesson ? `<option value="ref">本课（第${scopeLesson.num}課）</option>` : ''}
-          <option value="all">全部词条</option>
-          <option value="basic">初级</option>
-          <option value="middle">中级</option>
-        </select>
+        <span id="scopeHost"></span>
         <div class="seg" id="modes">
           ${MODES.map((m) => `<button data-mode="${m.id}" class="${m.id === state.mode ? 'on' : ''}">${m.label}</button>`).join('')}
         </div>
@@ -65,9 +59,27 @@ export async function render(root) {
         <button class="btn btn-primary" id="action">揭晓</button>
         <button class="btn btn-sm" id="restart" title="重新洗牌">重新开始</button>
       </div>
-      <div class="card-hint">空格 / 回车 翻面并继续 · ← 上一张</div>
     </div>
   `;
+
+  /* ---------- 范围选择 ---------- */
+  const scopeOptions = [{ value: 'all', label: '全部词条' }];
+  for (const level of ['basic', 'middle']) {
+    const lv = index.filter((l) => l.level === level);
+    if (!lv.length) continue;
+    scopeOptions.push({ group: level === 'basic' ? '初级' : '中级' });
+    for (const l of lv) {
+      scopeOptions.push({ value: `${l.level}:${l.num}`, label: `第 ${l.num} 課　${plain(l.title)}` });
+    }
+  }
+
+  const scopeDD = dropdown({
+    options: scopeOptions,
+    value: state.scope,
+    label: '选择范围',
+    onChange: (v) => { state.scope = v; restart(); },
+  });
+  root.querySelector('#scopeHost').append(scopeDD.el);
 
   const card = root.querySelector('#card');
   const front = root.querySelector('#front');
@@ -77,10 +89,9 @@ export async function render(root) {
   const actionBtn = root.querySelector('#action');
 
   const pool = () => {
-    let p = words;
-    if (state.scope === 'ref') p = p.filter((w) => w.ref === ref);
-    else if (state.scope !== 'all') p = p.filter((w) => w.level === state.scope);
-    return p;
+    if (state.scope === 'all') return words;
+    const [level, num] = state.scope.split(':');
+    return words.filter((w) => w.level === level && w.num === Number(num));
   };
 
   const shuffle = (a) => {
@@ -102,13 +113,10 @@ export async function render(root) {
     paint();
   }
 
-  function speak(w, rate = 0.9) {
-    if (w) audio.speak(kanaOf(w), rate);
-  }
+  const speak = (w, rate = 0.9) => { if (w) audio.speak(kanaOf(w), rate); };
 
   function frontHtml(w) {
     const surface = surfaceOf(w);
-    // 窄屏整体缩小，避免长词撑爆卡片
     const k = window.innerWidth < 621 ? 0.8 : 1;
     const size = (t) => Math.round((t.length <= 4 ? 52 : t.length <= 8 ? 42 : 34) * k);
 
@@ -166,7 +174,7 @@ export async function render(root) {
         <div class="done-sub">共 ${total} 个词</div>
       </div>`;
       back.innerHTML = '';
-      card.classList.remove('flipped');
+      card.classList.remove('revealed');
       actionBtn.textContent = '再来一遍';
       actionBtn.dataset.done = '1';
       return;
@@ -175,14 +183,13 @@ export async function render(root) {
     delete actionBtn.dataset.done;
     front.innerHTML = frontHtml(w);
     back.innerHTML = backHtml(w);
-    card.classList.toggle('flipped', state.revealed);
+    card.classList.toggle('revealed', state.revealed);
     actionBtn.textContent = state.revealed ? '下一张' : '揭晓';
 
     front.querySelector('#speakBtn')?.addEventListener('click', (e) => { e.stopPropagation(); speak(w); });
     back.querySelector('#speakBtn')?.addEventListener('click', (e) => { e.stopPropagation(); speak(w); });
 
     if (state.mode === 'audio' && !state.revealed) {
-      // 听音模式：换卡即读
       setTimeout(() => speak(w), 120);
     }
   }
@@ -202,23 +209,16 @@ export async function render(root) {
   }
 
   function prev() {
-    if (state.i === 0) return;
+    if (state.i === 0) { if (state.revealed) { state.revealed = false; paint(); } return; }
     state.i -= 1;
     state.revealed = false;
     paint();
   }
 
-  card.addEventListener('click', () => (state.revealed ? next() : reveal()));
-  card.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); state.revealed ? next() : reveal(); }
-  });
+  card.addEventListener('click', () => next());
   actionBtn.addEventListener('click', () => (actionBtn.dataset.done ? restart() : next()));
   root.querySelector('#restart').addEventListener('click', restart);
 
-  root.querySelector('#scope').addEventListener('change', (e) => {
-    state.scope = e.target.value;
-    restart();
-  });
   root.querySelector('#modes').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-mode]');
     if (!b || b.dataset.mode === state.mode) return;
@@ -228,11 +228,15 @@ export async function render(root) {
     paint();
   });
 
+  /* 键盘：← 上一张；空格 / 回车 / → 都是「先翻面，再下一张」 */
   const onKey = (e) => {
-    if (e.target.matches('input, select, textarea')) return;
-    if (e.key === ' ') { e.preventDefault(); state.revealed ? next() : reveal(); }
-    else if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); next(); }
-    else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+    const t = e.target;
+    if (t instanceof Element && t.closest('button, .dd, input, select, textarea')) return;
+    if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); return; }
+    if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      next();
+    }
   };
   document.addEventListener('keydown', onKey);
   window.addEventListener('hashchange', () => document.removeEventListener('keydown', onKey), { once: true });

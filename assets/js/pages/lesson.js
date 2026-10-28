@@ -41,13 +41,8 @@ export async function render(root, id) {
       ];
 
   root.innerHTML = `
-    <div class="crumb">
-      <a href="#/">课程</a><span>/</span>
-      <span>${LEVEL[l.level]}</span><span>/</span>
-      <span>第 ${l.num} 課</span>
-    </div>
-
     <header class="lesson-head">
+      <div class="top"><span class="eyebrow">${LEVEL[l.level]} · 第 ${l.num} 課</span></div>
       <h1>${ja(l.title)}</h1>
       ${l.contextTitle || l.textTitle ? `<div class="sub">${ja(l.contextTitle || l.textTitle)}</div>` : ''}
       <div class="lesson-meta">
@@ -220,8 +215,8 @@ export async function render(root, id) {
 
   /* ---------- 键盘：← → 翻课，空格播放 ---------- */
   const onKey = (e) => {
-    if (e.target.matches('input, textarea, select')) return;
-    if (e.key === ' ' && !e.target.closest('button')) { e.preventDefault(); audio.toggle(); }
+    if (e.target instanceof Element && e.target.matches('input, textarea, select')) return;
+    if (e.key === ' ' && !(e.target instanceof Element && e.target.closest('button'))) { e.preventDefault(); audio.toggle(); }
     if (e.key === 'ArrowLeft' && prev) location.hash = `#/lesson/${prev.id}`;
     if (e.key === 'ArrowRight' && next) location.hash = `#/lesson/${next.id}`;
   };

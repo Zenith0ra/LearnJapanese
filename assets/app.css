@@ -289,12 +289,6 @@ rt { font-family: var(--font-ja); font-size: .62em; color: var(--ruby); line-hei
 /* ============================================================
    lesson
    ============================================================ */
-.crumb {
-  display: flex; align-items: center; gap: 8px; font-size: 13px;
-  color: var(--muted); margin-bottom: 20px;
-}
-.crumb a:hover { color: var(--accent); }
-
 .lesson-head { margin-bottom: 24px; }
 .lesson-head .top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .lesson-head h1 {
@@ -471,6 +465,46 @@ select.sel {
 }
 .count { font-size: 13px; color: var(--faint); font-variant-numeric: tabular-nums; }
 
+/* 自定义下拉 */
+.dd { position: relative; display: inline-block; }
+.dd-trigger {
+  display: inline-flex; align-items: center; gap: 10px;
+  height: 38px; padding: 0 11px 0 13px; min-width: 132px; max-width: 260px;
+  border-radius: 9px; border: 1px solid var(--line-2);
+  background: var(--surface); color: var(--ink-2); font-size: 14px;
+  transition: border-color .15s, background .15s;
+}
+.dd-trigger:hover { border-color: var(--muted); background: var(--surface-2); }
+.dd-trigger .dd-value {
+  flex: 1; min-width: 0; text-align: left;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dd-trigger .chev { color: var(--faint); flex-shrink: 0; transition: transform .18s; }
+.dd.open .dd-trigger { border-color: var(--accent); }
+.dd.open .chev { transform: rotate(180deg); }
+
+.dd-menu {
+  position: absolute; z-index: 60; top: calc(100% + 6px); left: 0;
+  min-width: 100%; max-width: min(360px, 84vw); max-height: 330px; overflow: auto;
+  padding: 6px; border-radius: 11px;
+  background: var(--surface); border: 1px solid var(--line-2);
+  box-shadow: 0 10px 30px -12px rgba(30,20,10,.3), 0 2px 6px rgba(30,20,10,.06);
+  overscroll-behavior: contain;
+}
+.dd-menu[hidden] { display: none; }
+.dd-opt {
+  display: block; width: 100%; text-align: left;
+  padding: 8px 10px; border-radius: 7px;
+  font-size: 14px; color: var(--ink-2); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.dd-opt:hover { background: var(--surface-2); }
+.dd-opt[aria-selected="true"] { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.dd-group {
+  padding: 10px 10px 5px; font-size: 11.5px; letter-spacing: .1em;
+  color: var(--faint); font-weight: 500;
+}
+
 .wtable { width: 100%; border-collapse: collapse; }
 .wtable th {
   text-align: left; font-size: 12px; letter-spacing: .08em; color: var(--faint);
@@ -525,26 +559,26 @@ select.sel {
   transition: width .3s ease;
 }
 
-.card-stage { perspective: 1800px; }
+.card-stage { }
 .flashcard {
   position: relative; min-height: 400px; cursor: pointer;
-  transform-style: preserve-3d;
-  transition: transform .5s cubic-bezier(.2,.7,.3,1);
 }
-.flashcard.flipped { transform: rotateY(180deg); }
 .flashcard .face {
   position: absolute; inset: 0; overflow: auto;
   border-radius: 20px; background: var(--surface);
   border: 1px solid var(--line); box-shadow: var(--shadow);
-  backface-visibility: hidden; -webkit-backface-visibility: hidden;
   display: flex; flex-direction: column;
+  opacity: 0; pointer-events: none;
+  transition: opacity .16s ease;
 }
+.flashcard .face.front { opacity: 1; pointer-events: auto; }
+.flashcard.revealed .face.front { opacity: 0; pointer-events: none; }
+.flashcard.revealed .face.back { opacity: 1; pointer-events: auto; }
 .flashcard .face.front {
   align-items: center; justify-content: center;
   padding: 40px 32px; text-align: center;
 }
 .flashcard .face.back {
-  transform: rotateY(180deg);
   padding: 26px 30px; text-align: left;
 }
 
@@ -597,7 +631,6 @@ select.sel {
 }
 .card-actions .btn { height: 46px; padding: 0 28px; font-size: 15px; border-radius: 10px; }
 .card-actions .btn-sm { height: 36px; padding: 0 14px; font-size: 13.5px; }
-.card-hint { text-align: center; margin-top: 14px; font-size: 13px; color: var(--faint); }
 
 /* ---------- responsive ---------- */
 @media (min-width: 1080px) {
@@ -641,7 +674,6 @@ select.sel {
   .lesson-card { min-height: 0; padding: 15px 16px 14px; }
   .lesson-card .t { font-size: 16.5px; }
 
-  .crumb { font-size: 12.5px; margin-bottom: 16px; }
   .lesson-head h1 { font-size: 26px; line-height: 1.9; }
   .lesson-head .sub { font-size: 15px; }
 
@@ -692,7 +724,6 @@ select.sel {
   .kana-big { font-size: 30px; }
   .back-meaning { font-size: 18px; }
   .card-actions .btn { height: 42px; padding: 0 22px; }
-  .cards-bar .count { margin-left: 0; width: 100%; text-align: right; }
 
   .pager.lesson-nav { gap: 10px; }
   .pager.lesson-nav .btn { padding: 0 12px; font-size: 13px; }

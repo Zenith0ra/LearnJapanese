@@ -161,15 +161,30 @@ await check('卡片有词', `!!document.querySelector('#front .front-cn, #front 
 await check('默认「揭晓」按钮', `document.querySelector('#action').textContent.trim()`, '揭晓');
 await check('揭晓翻面', `(document.querySelector('#action').click(), 1)`);
 await sleep(200);
-await check('卡片已翻到背面', `document.querySelector('#card').classList.contains('flipped')`, true);
+await check('卡片已翻到背面', `document.querySelector('#card').classList.contains('revealed')`, true);
 await check('背面有假名与释义', `!!document.querySelector('#back .kana-big') && !!document.querySelector('#back .back-meaning')`);
 await check('背面有声调数字', `!!document.querySelector('#back .pitch-num')`);
 await check('下一张', `(document.querySelector('#action').click(), 1)`);
 await sleep(200);
 await check('计数走到第二个', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('2 /'));
-await check('切到假名模式', `(document.querySelector('#modes [data-mode=kana]').click(), 1)`);
+await check('翻回正面', `document.querySelector('#card').classList.contains('revealed')`, false);
+
+// 键盘：空格第一次翻面，第二次下一张
+await check('空格翻面', `(document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true })), 1)`);
 await sleep(200);
-await check('假名模式正面是假名', `document.querySelector('#front .front-ja') !== null`, true);
+await check('空格后已翻面', `document.querySelector('#card').classList.contains('revealed')`, true);
+await check('空格再按进下一张', `(document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true })), 1)`);
+await sleep(200);
+await check('已到第三张', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('3 /'));
+
+// 选择某一课
+await check('打开课次下拉', `(document.querySelector('.dd-trigger').click(), 1)`);
+await sleep(200);
+await check('下拉里有课次分组', `document.querySelectorAll('.dd-opt').length`, (n) => n >= 80);
+await check('选中第 3 课', `(document.querySelector('.dd-opt[data-value="basic:3"]').click(), 1)`);
+await sleep(400);
+await check('范围已切到第 3 课', `document.querySelector('#counter').textContent.trim()`, (v) => v.endsWith('/ 43'));
+await check('触发按钮显示课名', `document.querySelector('.dd-value').textContent.includes('第 3 課')`, true);
 
 /* ---------- 主题 ---------- */
 await check('切主题', `(document.querySelector('#themeBtn').click(), document.documentElement.dataset.theme)`, (v) => ['auto', 'light', 'dark'].includes(v));

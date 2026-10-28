@@ -77,6 +77,12 @@ for (const url of urls) {
   await send('Page.navigate', { url });
   await sleep(1400); // 等数据 fetch + 渲染
 
+  // SHOT_JS：截图前先在页面里跑一段 JS（比如点开下拉）
+  if (process.env.SHOT_JS) {
+    await send('Runtime.evaluate', { expression: process.env.SHOT_JS, awaitPromise: true });
+    await sleep(500);
+  }
+
   const name = url
     .replace(/^https?:\/\/[^/]+\/?/, '')
     .replace(/^#\/?/, '')

@@ -8,7 +8,6 @@ export async function render(root) {
   const state = { q: '', level: 'all' };
 
   root.innerHTML = `
-    <div class="crumb"><a href="#/">课程</a><span>/</span><span>语法</span></div>
     <header class="hero slim">
       <h1>语法总表</h1>
     </header>

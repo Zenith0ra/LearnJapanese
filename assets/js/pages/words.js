@@ -3,17 +3,16 @@ import { pitch, plain, speakable } from '../ruby.js';
 import { lessonsAll, wordsAll } from '../data.js';
 import * as audio from '../audio.js';
 import { esc, debounce } from '../util.js';
+import { dropdown } from '../ui/dropdown.js';
 
 const PAGE = 80;
 
 export async function render(root) {
   const [{ index }, words] = await Promise.all([lessonsAll(), wordsAll()]);
-  const lessons = index;
 
-  const state = { q: '', level: 'all', ref: 'all', page: 0 };
+  const state = { q: '', scope: 'all', page: 0 };
 
   root.innerHTML = `
-    <div class="crumb"><a href="#/">课程</a><span>/</span><span>单词</span></div>
     <header class="hero slim">
       <h1>单词总表</h1>
     </header>
@@ -25,12 +24,7 @@ export async function render(root) {
         </svg>
         <input id="q" type="search" placeholder="搜假名、汉字、中文释义…" autocomplete="off" spellcheck="false">
       </div>
-      <select class="sel" id="level">
-        <option value="all">全部级别</option>
-        <option value="basic">初级</option>
-        <option value="middle">中级</option>
-      </select>
-      <select class="sel" id="lesson"><option value="all">全部课次</option></select>
+      <span id="scopeHost"></span>
       <span class="count" id="count"></span>
     </div>
 
@@ -44,32 +38,45 @@ export async function render(root) {
     <div class="pager" id="pager"></div>
   `;
 
-  const lessonSel = root.querySelector('#lesson');
-  const fillLessons = () => {
-    const lv = state.level;
-    const opts = lessons
-      .filter((l) => lv === 'all' || l.level === lv)
-      .map((l) => `<option value="${l.ref}">${l.level === 'basic' ? '初' : '中'} 第${l.num}課</option>`)
-      .join('');
-    lessonSel.innerHTML = `<option value="all">全部课次</option>${opts}`;
-    lessonSel.value = state.ref;
-  };
-  fillLessons();
+  /* ---------- 范围选择（全部 / 某级 / 某一课） ---------- */
+  const scopeOptions = [{ value: 'all', label: '全部课次' }];
+  for (const level of ['basic', 'middle']) {
+    const lv = index.filter((l) => l.level === level);
+    if (!lv.length) continue;
+    scopeOptions.push({ group: level === 'basic' ? '初级' : '中级' });
+    scopeOptions.push({ value: `lv:${level}`, label: `${level === 'basic' ? '初级' : '中级'} · 全部 ${lv.length} 課` });
+    for (const l of lv) {
+      scopeOptions.push({ value: `${l.level}:${l.num}`, label: `第 ${l.num} 課　${plain(l.title)}` });
+    }
+  }
+
+  const scopeDD = dropdown({
+    options: scopeOptions,
+    value: state.scope,
+    label: '选择课次',
+    onChange: (v) => { state.scope = v; state.page = 0; paint(); },
+  });
+
+  root.querySelector('#scopeHost').append(scopeDD.el);
 
   const tbody = root.querySelector('#tbody');
   const pager = root.querySelector('#pager');
   const countEl = root.querySelector('#count');
+
+  const inScope = (w) => {
+    const v = state.scope;
+    if (v === 'all') return true;
+    if (v.startsWith('lv:')) return w.level === v.slice(3);
+    const [level, num] = v.split(':');
+    return w.level === level && w.num === Number(num);
+  };
 
   const match = (w, q) =>
     !q || w.kana.includes(q) || w.kanji.includes(q) || w.desc.includes(q) || w.word.includes(q);
 
   function results() {
     const q = state.q.trim();
-    return words.filter((w) =>
-      (state.level === 'all' || w.level === state.level) &&
-      (state.ref === 'all' || w.ref === state.ref) &&
-      match(w, q)
-    );
+    return words.filter((w) => inScope(w) && match(w, q));
   }
 
   function paint() {
@@ -101,17 +108,6 @@ export async function render(root) {
   root.querySelector('#q').addEventListener('input', debounce((e) => {
     state.q = e.target.value; state.page = 0; paint();
   }, 150));
-
-  root.querySelector('#level').addEventListener('change', (e) => {
-    state.level = e.target.value;
-    state.ref = 'all';
-    fillLessons();
-    state.page = 0; paint();
-  });
-
-  lessonSel.addEventListener('change', (e) => {
-    state.ref = e.target.value; state.page = 0; paint();
-  });
 
   pager.addEventListener('click', (e) => {
     const b = e.target.closest('button[data-p]');
