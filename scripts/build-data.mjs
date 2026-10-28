@@ -39,6 +39,16 @@ const YAML = (() => {
 const SRC = resolve(process.argv[2] ?? join(ROOT, '..', 'LearnJapan'));
 const OUT = join(ROOT, 'data');
 
+if (!existsSync(join(SRC, '_data'))) {
+  console.error(
+    `\n找不到数据源目录：${SRC}\n` +
+    '重建数据需要 wizicer/LearnJapan 仓库里的 _data（只读它，不会改动）。\n' +
+    `  git clone https://github.com/wizicer/LearnJapan.git "${SRC}"\n` +
+    '日常使用站点不需要它——data/*.json 已经提交在仓库里。\n'
+  );
+  process.exit(1);
+}
+
 const read = (p) => readFileSync(join(SRC, p), 'utf8');
 
 /* ---------- 文本块解析 ---------- */
