@@ -58,6 +58,9 @@ const send = (method, params = {}) => new Promise((res, rej) => {
 
 await send('Runtime.enable');
 await send('Page.enable');
+// 关掉浏览器缓存：否则连续跑测试会拿到上次的 JS（GitHub Pages 有 10 分钟缓存）
+await send('Network.enable');
+await send('Network.setCacheDisabled', { cacheDisabled: true });
 await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
 
 const evaluate = async (expr) => {
