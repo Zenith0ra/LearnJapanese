@@ -25,7 +25,8 @@ export function dropdown({ options, value, onChange, label = '' }) {
   const valueEl = root.querySelector('.dd-value');
   const menu = root.querySelector('.dd-menu');
 
-  const paintValue = () => { valueEl.textContent = current?.label ?? ''; };
+  // 收起时显示 short（短标签），展开的列表里显示 label（带说明）
+  const paintValue = () => { valueEl.textContent = current?.short ?? current?.label ?? ''; };
 
   const paintMenu = () => {
     menu.innerHTML = options.map((o) => {

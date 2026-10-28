@@ -158,13 +158,13 @@ await check('中级语法分组', `document.querySelectorAll('.gpage-item').leng
 /* ---------- 背单词 ---------- */
 await go('#/cards?ref=001');
 await check('卡片有词', `!!document.querySelector('#front .front-cn, #front .front-ja')`);
-await check('默认「揭晓」按钮', `document.querySelector('#action').textContent.trim()`, '揭晓');
-await check('揭晓翻面', `(document.querySelector('#action').click(), 1)`);
+await check('没有多余的揭晓按钮', `document.querySelector('#action') === null`, true);
+await check('点卡片翻面', `(document.querySelector('#card').click(), 1)`);
 await sleep(200);
 await check('卡片已翻到背面', `document.querySelector('#card').classList.contains('revealed')`, true);
 await check('背面有大字与释义', `!!document.querySelector('#back .back-hero') && !!document.querySelector('#back .back-meaning')`);
 await check('背面有声调数字', `!!document.querySelector('#back .pitch-num')`);
-await check('下一张', `(document.querySelector('#action').click(), 1)`);
+await check('再点一次进下一张', `(document.querySelector('#card').click(), 1)`);
 await sleep(200);
 await check('计数走到第二个', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('2 /'));
 await check('翻回正面', `document.querySelector('#card').classList.contains('revealed')`, false);

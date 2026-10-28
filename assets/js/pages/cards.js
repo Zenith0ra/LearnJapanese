@@ -63,25 +63,23 @@ export async function render(root) {
       <div class="card-progress"><i id="bar" style="width:0%"></i></div>
 
       <div class="card-stage">
-        <div class="flashcard" id="card" role="button" tabindex="0" aria-label="翻转卡片">
+        <div class="flashcard" id="card" role="button" tabindex="0" aria-label="点击翻面 / 下一张">
           <div class="face front" id="front"></div>
           <div class="face back" id="back"></div>
-          <div class="card-cta">
-            <button class="btn btn-primary" id="action">揭晓</button>
-          </div>
         </div>
       </div>
     </div>
   `;
 
   /* ---------- 范围选择 ---------- */
-  const scopeOptions = [{ value: 'all', label: '全部词条' }];
+  const scopeOptions = [{ value: 'all', label: '全部词条', short: '全部词条' }];
   for (const level of ['basic', 'middle']) {
     const lv = index.filter((l) => l.level === level);
     if (!lv.length) continue;
     scopeOptions.push({ group: level === 'basic' ? '初级' : '中级' });
     for (const l of lv) {
-      scopeOptions.push({ value: `${l.level}:${l.num}`, label: `第 ${l.num} 課　${plain(l.title)}` });
+      // label 给下拉列表（带课标题），short 给收起后的按钮（只有第几课）
+      scopeOptions.push({ value: `${l.level}:${l.num}`, label: `第 ${l.num} 課　${plain(l.title)}`, short: `第 ${l.num} 課` });
     }
   }
 
@@ -98,7 +96,6 @@ export async function render(root) {
   const back = root.querySelector('#back');
   const counter = root.querySelector('#counter');
   const bar = root.querySelector('#bar');
-  const actionBtn = root.querySelector('#action');
 
   const pool = () => {
     if (state.scope === 'all') return words;
@@ -207,20 +204,16 @@ export async function render(root) {
     if (!w) {
       front.innerHTML = `<div class="done">
         <div class="done-title">这一组背完了</div>
-        <div class="done-sub">共 ${total} 个词</div>
+        <div class="done-sub">共 ${total} 个词 · 点一下重新开始</div>
       </div>`;
       back.innerHTML = '';
       card.classList.remove('revealed');
-      actionBtn.textContent = '再来一遍';
-      actionBtn.dataset.done = '1';
       return;
     }
 
-    delete actionBtn.dataset.done;
     front.innerHTML = frontHtml(w);
     back.innerHTML = backHtml(w);
     card.classList.toggle('revealed', state.revealed);
-    actionBtn.textContent = state.revealed ? '下一张' : '揭晓';
 
     front.querySelector('#speakBtn')?.addEventListener('click', (e) => { e.stopPropagation(); speak(w); });
     back.querySelector('#speakBtn')?.addEventListener('click', (e) => { e.stopPropagation(); speak(w); });
@@ -262,11 +255,6 @@ export async function render(root) {
   }
 
   card.addEventListener('click', () => next());
-  actionBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (actionBtn.dataset.done) restart();
-    else next();
-  });
   root.querySelector('#restart').addEventListener('click', (e) => {
     e.stopPropagation();
     restart();

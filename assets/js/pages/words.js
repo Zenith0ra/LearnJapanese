@@ -39,14 +39,19 @@ export async function render(root) {
   `;
 
   /* ---------- 范围选择（全部 / 某级 / 某一课） ---------- */
-  const scopeOptions = [{ value: 'all', label: '全部课次' }];
+  const scopeOptions = [{ value: 'all', label: '全部课次', short: '全部课次' }];
   for (const level of ['basic', 'middle']) {
     const lv = index.filter((l) => l.level === level);
     if (!lv.length) continue;
     scopeOptions.push({ group: level === 'basic' ? '初级' : '中级' });
-    scopeOptions.push({ value: `lv:${level}`, label: `${level === 'basic' ? '初级' : '中级'} · 全部 ${lv.length} 課` });
+    scopeOptions.push({
+      value: `lv:${level}`,
+      label: `${level === 'basic' ? '初级' : '中级'} · 全部 ${lv.length} 課`,
+      short: `${level === 'basic' ? '初级' : '中级'} · 全部`,
+    });
     for (const l of lv) {
-      scopeOptions.push({ value: `${l.level}:${l.num}`, label: `第 ${l.num} 課　${plain(l.title)}` });
+      // label 给下拉列表（带课标题），short 给收起后的按钮（只有第几课）
+      scopeOptions.push({ value: `${l.level}:${l.num}`, label: `第 ${l.num} 課　${plain(l.title)}`, short: `第 ${l.num} 課` });
     }
   }
 
