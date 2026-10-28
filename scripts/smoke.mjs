@@ -121,7 +121,7 @@ await check('拖动进度条更新时长', `(() => {
 await check('点生词标签', `(document.querySelector('[data-tab=words]').click(), 1)`);
 await sleep(900);
 await check('生词渲染', `document.querySelectorAll('#pane .word-row').length`, (n) => n === 56);
-await check('生词两栏（宽屏）', `getComputedStyle(document.querySelector('.word-list')).columnCount`, '2');
+await check('生词两栏（宽屏）', `getComputedStyle(document.querySelector('.word-list')).gridTemplateColumns.split(' ').length`, 2);
 await check('音调线存在', `document.querySelectorAll('#pane .pitch .mora.h').length`, (n) => n > 0);
 await check('点语法标签', `(document.querySelector('[data-tab=grammar]').click(), 1)`);
 await sleep(700);

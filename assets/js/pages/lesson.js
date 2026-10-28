@@ -264,12 +264,12 @@ function wordRow(w) {
   const pos = w.pos ? `<span class="pos">${esc(w.pos)}</span>` : '';
 
   return `
-    <div class="word-row${kanaOnly ? ' no-kana' : ''}" data-read="${esc(kanaBase)}" title="点击朗读">
-      ${kanaOnly ? '' : `<div class="kana">${pitch(w.kana)}</div>`}
-      <div class="kanji">
-        <span class="w">${kanaOnly ? pitch(w.kana) : esc(surface)}</span>${pos}
+    <div class="word-row" data-read="${esc(kanaBase)}" title="点击朗读">
+      <div class="ja">
+        <div class="kanji${surface.length >= 6 ? ' long' : ''}">${kanaOnly ? pitch(w.kana) : esc(surface)}${pos}</div>
+        ${kanaOnly ? '<span class="kana empty" aria-hidden="true"></span>' : `<span class="kana">${pitch(w.kana)}</span>`}
       </div>
-      <div class="desc">${esc(w.desc)}</div>
+      <div class="zh">${esc(w.desc)}</div>
     </div>`;
 }
 
