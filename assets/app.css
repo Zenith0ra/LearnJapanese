@@ -134,10 +134,21 @@ main {
 }
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
 .foot {
-  max-width: 1080px; margin: 0 auto; padding: 0 24px 52px;
-  color: var(--faint); font-size: 12.5px;
+  max-width: 1080px; margin: 0 auto; padding: 0 24px 56px;
+  color: var(--muted); font-size: 13px;
 }
-.foot a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+/* 两段信息，宽屏一行、窄屏上下排；中间用间隔点分开，避免一句话折成两行时断得难看 */
+.foot-inner {
+  display: flex; flex-wrap: wrap; align-items: baseline;
+  gap: 4px 10px; line-height: 1.7;
+}
+.foot-dot { color: var(--faint); user-select: none; }
+.foot a {
+  color: var(--ink-2); text-decoration: none;
+  border-bottom: 1px solid var(--line-2); padding-bottom: 1px;
+  transition: color .15s, border-color .15s;
+}
+.foot a:hover { color: var(--accent); border-color: var(--accent); }
 
 /* ---------- shared bits ---------- */
 .eyebrow {
@@ -688,6 +699,8 @@ select.sel {
 
   main { padding: 26px 18px 64px; }
   .foot { padding: 0 18px 44px; }
+  .foot-inner { flex-direction: column; gap: 2px; }
+  .foot-dot { display: none; }
 
   .hero { padding: 4px 0 20px; margin-bottom: 26px; }
   .hero h1 { font-size: 32px; letter-spacing: .06em; }
