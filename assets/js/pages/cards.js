@@ -1,6 +1,7 @@
 /** 背单词：翻卡背诵（四种出题方向 + 轻量淡入切换） */
 import { pitch, plain } from '../ruby.js';
 import { lessonsAll, wordsAll } from '../data.js';
+import { prefs, setPref } from '../store.js';
 import * as audio from '../audio.js';
 import { esc } from '../util.js';
 import { dropdown } from '../ui/dropdown.js';
@@ -27,6 +28,7 @@ export async function render(root) {
   const state = {
     scope: fromLesson ? `${fromLesson.level}:${fromLesson.num}` : 'all',
     mode: 'cn',
+    order: prefs().cardOrder === 'order' ? 'order' : 'random',
     deck: [],
     i: 0,
     revealed: false,
@@ -43,13 +45,19 @@ export async function render(root) {
         <div class="seg" id="modes">
           ${MODES.map((m) => `<button data-mode="${m.id}" class="${m.id === state.mode ? 'on' : ''}">${m.label}</button>`).join('')}
         </div>
-        <span class="count" id="counter"></span>
-        <button class="icon-btn" id="restart" title="重新洗牌" aria-label="重新洗牌">
-          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
-               stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 11a8 8 0 10-2.6 6"/><path d="M20 5v6h-6"/>
-          </svg>
-        </button>
+        <div class="cards-bar-end">
+          <span class="count" id="counter"></span>
+          <div class="seg" id="orderSeg" title="出题顺序">
+            <button data-order="order" class="${state.order === 'order' ? 'on' : ''}">顺序</button>
+            <button data-order="random" class="${state.order === 'random' ? 'on' : ''}">随机</button>
+          </div>
+          <button class="icon-btn" id="restart" title="重新开始" aria-label="重新开始">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+                 stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 11a8 8 0 10-2.6 6"/><path d="M20 5v6h-6"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div class="card-progress"><i id="bar" style="width:0%"></i></div>
@@ -111,7 +119,13 @@ export async function render(root) {
   const finished = () => state.i >= state.deck.length;
 
   function restart() {
-    state.deck = shuffle(pool());
+    const list = pool();
+    if (state.order === 'order') {
+      state.deck = [...list].sort((a, b) =>
+        a.level.localeCompare(b.level) || a.num - b.num || a.part - b.part || a.idx - b.idx);
+    } else {
+      state.deck = shuffle(list);
+    }
     state.i = 0;
     state.revealed = false;
     paint();
@@ -265,6 +279,15 @@ export async function render(root) {
     root.querySelectorAll('#modes button').forEach((x) => x.classList.toggle('on', x === b));
     state.revealed = false;
     paint();
+  });
+
+  root.querySelector('#orderSeg').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-order]');
+    if (!b || b.dataset.order === state.order) return;
+    state.order = b.dataset.order;
+    setPref('cardOrder', state.order);
+    root.querySelectorAll('#orderSeg button').forEach((x) => x.classList.toggle('on', x === b));
+    restart();
   });
 
   /* 键盘：← 上一张；空格 / 回车 / → 都是「先翻面，再下一张」 */

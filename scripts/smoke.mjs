@@ -188,6 +188,14 @@ await sleep(400);
 await check('范围已切到第 3 课', `document.querySelector('#counter').textContent.trim()`, (v) => v.endsWith('/ 43'));
 await check('触发按钮显示课名', `document.querySelector('.dd-value').textContent.includes('第 3 課')`, true);
 
+// 顺序 / 随机
+await check('切到顺序', `(document.querySelector('#orderSeg [data-order=order]').click(), 1)`);
+await sleep(300);
+await check('顺序模式第一张是第 3 课第一个词', `document.querySelector('#front .front-cn')?.textContent`, (v) => v === '百货商店');
+await check('切回随机', `(document.querySelector('#orderSeg [data-order=random]').click(), 1)`);
+await sleep(200);
+await check('随机模式仍从第一张开始', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('1 /'));
+
 /* ---------- 主题 ---------- */
 await check('切主题', `(document.querySelector('#themeBtn').click(), document.documentElement.dataset.theme)`, (v) => ['auto', 'light', 'dark'].includes(v));
 

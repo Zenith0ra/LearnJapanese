@@ -551,15 +551,18 @@ select.sel {
 /* ============================================================
    flash cards
    ============================================================ */
-.cards-wrap { max-width: 640px; margin: 0 auto; }
+.cards-wrap { max-width: 700px; margin: 0 auto; }
 .cards-bar {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   margin-bottom: 14px;
 }
-.cards-bar .count {
-  margin-left: auto; font-size: 14px; color: var(--faint);
-  font-variant-numeric: tabular-nums;
+.cards-bar .dd-trigger { max-width: 200px; }
+.cards-bar .seg button { height: 28px; padding: 0 11px; font-size: 13.5px; }
+.cards-bar-end {
+  display: flex; align-items: center; gap: 8px;
+  margin-left: auto; flex-shrink: 0;
 }
+.cards-bar .count { font-size: 14px; color: var(--faint); font-variant-numeric: tabular-nums; }
 .card-progress {
   height: 2px; background: var(--line); border-radius: 99px;
   overflow: hidden; margin-bottom: 18px;
