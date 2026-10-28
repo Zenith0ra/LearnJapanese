@@ -3,6 +3,7 @@
  */
 import { $, $$ } from './util.js';
 import { applyTheme, cycleTheme } from './store.js';
+import { mountChat } from './ui/chat.js';
 import * as home from './pages/home.js';
 import * as lesson from './pages/lesson.js';
 import * as words from './pages/words.js';
@@ -10,6 +11,7 @@ import * as grammar from './pages/grammar.js';
 import * as cards from './pages/cards.js';
 
 applyTheme();
+mountChat();
 
 // 深链指定主题：#/lesson/l1?theme=dark
 {

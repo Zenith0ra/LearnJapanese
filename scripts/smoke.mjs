@@ -196,6 +196,29 @@ await check('切回随机', `(document.querySelector('#orderSeg [data-order=rand
 await sleep(200);
 await check('随机模式仍从第一张开始', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('1 /'));
 
+/* ---------- AI 面板 ---------- */
+await evaluate(`localStorage.setItem('lj.ai.key', JSON.stringify('sk-test-invalid-key-000'))`);
+await go('#/');
+await check('AI 浮动按钮存在', `!!document.querySelector('#aiFab')`);
+await check('点击打开面板', `(document.querySelector('#aiFab').click(), 1)`);
+await sleep(500);
+await check('面板展开', `document.querySelector('#aiPanel').classList.contains('open')`, true);
+await check('输入框可用', `!!document.querySelector('#aiInput')`);
+await check('发一条消息', `(() => {
+  const i = document.querySelector('#aiInput');
+  i.value = '你好';
+  i.dispatchEvent(new Event('input', { bubbles: true }));
+  document.querySelector('#aiSend').click();
+  return 1;
+})()`);
+await check('出现用户气泡', `document.querySelectorAll('.ai-msg.me').length`, 1);
+await sleep(5000);
+await check('拿到回复或错误提示', `!!document.querySelector('.ai-md, .ai-error')`);
+await check('按 Esc 关闭', `(document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })), 1)`);
+await sleep(400);
+await check('面板已关闭', `document.querySelector('#aiPanel').classList.contains('open')`, false);
+await evaluate(`localStorage.removeItem('lj.ai.key')`);
+
 /* ---------- 主题 ---------- */
 await check('切主题', `(document.querySelector('#themeBtn').click(), document.documentElement.dataset.theme)`, (v) => ['auto', 'light', 'dark'].includes(v));
 

@@ -24,6 +24,21 @@
 
 背单词的「已记住」与注音 / 译文偏好存在浏览器 localStorage，不需要后端。
 
+## AI 助手
+
+每个页面右下角都有一个 ✦ 按钮，打开右侧对话面板，用的是**你自己的 DeepSeek API Key**：
+
+- 首次打开会让你填 Key（在 [platform.deepseek.com](https://platform.deepseek.com/api_keys) 申请）。
+  Key 只保存在这台浏览器的 `localStorage`（`lj.ai.key`），请求**直接从浏览器发往 `api.deepseek.com`**，不经过任何第三方服务器。
+- 模型可切 `Flash` / `Pro`；`思考` 开关控制是否返回思维链（思考过程会折叠显示在回答上方）。
+- 支持上传**图片**（JPG / PNG / GIF / WebP，单张 ≤ 8 MB，走多模态，需要 Flash 模型）和**文本文件**
+  （txt / md / csv / json / 代码等，≤ 256 KB，内容会拼进提示词）。PDF、Word 这类二进制文件不支持。
+- 回答按 Markdown 渲染（标题、列表、表格、代码块带复制按钮、链接）。
+- 对话只在内存里，刷新页面就没了；Key、模型、思考开关会被记住。
+- 快捷键：`Enter` 发送，`Shift + Enter` 换行，`Esc` 关闭面板。
+
+> 没填 Key 或 Key 失效时，面板里会显示对应提示，不会静默失败。
+
 ## 目录
 
 ```
@@ -35,7 +50,7 @@ assets/js/ruby.js     注音与音调渲染
 assets/js/store.js    主题与本地偏好
 assets/js/audio.js    音频与朗读
 assets/js/pages/      各页面
-assets/js/ui/         下拉等交互组件
+assets/js/ui/         下拉、AI 对话框、Markdown 渲染
 data/*.json           由 _data 转换出的站点数据
 audio/                课文与单词音频
 scripts/build-data.mjs 数据转换（读 ../LearnJapan/_data）
