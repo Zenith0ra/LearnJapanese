@@ -5,11 +5,8 @@
  * 用法：node scripts/build-data.mjs [源目录]
  * 默认源目录：../LearnJapan（只读它的 _data 目录）
  *
- * YAML 解析需要 js-yaml。按下面的顺序找，找到就用：
- *   1. 项目里 `npm i js-yaml` 装的
- *   2. 同级 portfolio 项目的 node_modules
- *   3. 本机全局 / 其他可解析位置
- * 都没有就报错退出，不会静默出错。
+ * YAML 解析用 scripts/vendor/js-yaml（MIT，已随仓库一起提交，无需安装）。
+ * 想换成 npm 版的话，先 `npm i js-yaml`，脚本会优先用项目里的那份。
  */
 import { createRequire } from 'node:module';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
@@ -22,17 +19,14 @@ const ROOT = resolve(__dirname, '..');
 
 const YAML = (() => {
   const candidates = [
-    'js-yaml',
-    join(ROOT, 'node_modules', 'js-yaml'),
-    'D:/Dev/portfolio/node_modules/js-yaml',
+    join(__dirname, 'vendor', 'js-yaml'),   // 随仓库提交的副本（默认走这条）
+    join(ROOT, 'node_modules', 'js-yaml'),  // 如果项目里 npm i 过
+    'js-yaml',                              // 全局 / NODE_PATH
   ];
   for (const c of candidates) {
     try { return require(c); } catch { /* 试下一个 */ }
   }
-  console.error(
-    '\n缺少 js-yaml，无法解析 YAML。\n' +
-    '在项目目录执行 `npm i js-yaml` 后重试即可（只需要这一个依赖，站点本身仍是零依赖）。\n'
-  );
+  console.error('\n找不到 js-yaml（scripts/vendor/js-yaml 应该跟着仓库一起在）。\n');
   process.exit(1);
 })();
 
