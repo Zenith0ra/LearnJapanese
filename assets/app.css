@@ -506,9 +506,12 @@ select.sel {
 }
 
 .wtable { width: 100%; border-collapse: collapse; }
+/* 表头统一：同一个字体、同一个字号，不受下面各列单元格样式影响 */
 .wtable th {
-  text-align: left; font-size: 12px; letter-spacing: .08em; color: var(--faint);
+  text-align: left; font-family: var(--font-ui);
+  font-size: 12.5px; letter-spacing: .08em; color: var(--faint);
   font-weight: 500; padding: 0 12px 10px; border-bottom: 1px solid var(--line-2);
+  white-space: nowrap;
 }
 .wtable td {
   padding: 11px 12px; border-bottom: 1px solid var(--line);
@@ -516,11 +519,17 @@ select.sel {
 }
 .wtable tr { transition: background .12s; }
 .wtable tbody tr:hover { background: var(--surface-2); cursor: pointer; }
-.wtable .c-kana { font-family: var(--font-ja); width: 21%; }
-.wtable .c-kanji { font-family: var(--font-ja); font-size: 19px; font-weight: 600; width: 23%; }
-.wtable .c-pos { width: 68px; color: var(--muted); font-size: 13px; }
-.wtable .c-desc { color: var(--ink-2); font-size: 15.5px; }
-.wtable .c-l { width: 52px; color: var(--faint); font-size: 12.5px; text-align: right; font-variant-numeric: tabular-nums; }
+/* 列宽（表头与单元格共用） */
+.wtable .c-kana { width: 21%; }
+.wtable .c-kanji { width: 23%; }
+.wtable .c-pos { width: 68px; }
+.wtable .c-l { width: 52px; }
+/* 列样式只作用于数据行 */
+.wtable td.c-kana { font-family: var(--font-ja); }
+.wtable td.c-kanji { font-family: var(--font-ja); font-size: 19px; font-weight: 600; }
+.wtable td.c-pos { color: var(--muted); font-size: 13px; }
+.wtable td.c-desc { color: var(--ink-2); font-size: 15.5px; }
+.wtable td.c-l { color: var(--faint); font-size: 12.5px; text-align: right; font-variant-numeric: tabular-nums; }
 
 .pager {
   display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -707,7 +716,7 @@ select.sel {
 
   .wtable .c-pos, .wtable .c-l { display: none; }
   .wtable td, .wtable th { padding-left: 5px; padding-right: 5px; }
-  .wtable .c-kanji { font-size: 16.5px; }
+  .wtable td.c-kanji { font-size: 16.5px; }
   .wtable td { font-size: 14px; }
 
   .filters { gap: 8px; }
