@@ -73,8 +73,6 @@ export function mountChat() {
         <div class="ai-msgs" id="aiMsgs"></div>
         <div class="ai-setup" id="aiSetup" hidden>
           <h3>先填一个 API Key</h3>
-          <p>在 <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener">platform.deepseek.com</a> 申请，填一次就行。</p>
-          <p class="ai-note">Key 只保存在这个浏览器的 localStorage 里，请求直接发往 <code>api.deepseek.com</code>，不经过任何第三方服务器。</p>
           <div class="ai-setup-row">
             <input type="password" id="aiKeyInput" placeholder="sk-..." autocomplete="off" spellcheck="false">
             <button class="btn btn-primary" id="aiKeySave" type="button">保存</button>
@@ -85,7 +83,7 @@ export function mountChat() {
 
       <div class="ai-foot">
         <div class="ai-attach" id="aiAttach"></div>
-        <textarea id="aiInput" rows="1" placeholder="问点什么…（Enter 发送 / Shift+Enter 换行）" spellcheck="false"></textarea>
+        <textarea id="aiInput" rows="1" placeholder="问点什么…" spellcheck="false"></textarea>
         <div class="ai-bar">
           <button class="btn btn-sm" id="aiImgBtn" type="button">${ICONS.img}<span>图片</span></button>
           <button class="btn btn-sm" id="aiFileBtn" type="button">${ICONS.file}<span>文件</span></button>
@@ -309,13 +307,14 @@ export function mountChat() {
     const think = m.reasoning
       ? `<details class="ai-think"${m.streaming ? ' open' : ''}>
            <summary>${m.streaming ? '思考中…' : '思考过程'}</summary>
-           <div class="ai-think-body">${esc(m.reasoning)}</div>
+           <div class="ai-think-body ai-md">${renderMarkdown(m.reasoning)}</div>
          </details>`
       : '';
     if (m.error) return `<div class="ai-error">${esc(m.text)}</div>`;
-    const cursor = m.streaming ? '<span class="ai-caret"></span>' : '';
-    const empty = m.streaming && !m.text ? '<div class="ai-typing"><i></i><i></i><i></i></div>' : '';
-    return think + (m.text ? `<div class="ai-md">${renderMarkdown(m.text)}</div>` : empty) + cursor;
+    // 还没吐任何字（含思考）时才显示等待动画，不要一直在旁边闪
+    const waiting = m.streaming && !m.text && !m.reasoning;
+    const empty = waiting ? '<div class="ai-typing"><i></i><i></i><i></i></div>' : '';
+    return think + (m.text ? `<div class="ai-md">${renderMarkdown(m.text)}</div>` : empty);
   }
 
   function bubble(m) {
@@ -325,10 +324,7 @@ export function mountChat() {
 
   function renderMessages() {
     if (!state.messages.length) {
-      msgs.innerHTML = `<div class="ai-empty">
-        <div class="ai-empty-title">有什么想问的？</div>
-        <div class="ai-empty-sub">课文、语法、单词都可以问；也可以贴图片或上传文件。</div>
-      </div>`;
+      msgs.innerHTML = `<div class="ai-empty"><div class="ai-empty-title">有什么想问的？</div></div>`;
       return;
     }
     msgs.innerHTML = state.messages.map(bubble).join('');
