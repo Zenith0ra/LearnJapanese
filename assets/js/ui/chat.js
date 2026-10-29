@@ -72,7 +72,6 @@ export function mountChat() {
       <div class="ai-body" id="aiBody">
         <div class="ai-msgs" id="aiMsgs"></div>
         <div class="ai-setup" id="aiSetup" hidden>
-          <h3>先填一个 API Key</h3>
           <div class="ai-setup-row">
             <input type="password" id="aiKeyInput" placeholder="sk-..." autocomplete="off" spellcheck="false">
             <button class="btn btn-primary" id="aiKeySave" type="button">保存</button>
