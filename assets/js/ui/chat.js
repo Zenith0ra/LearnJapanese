@@ -109,6 +109,51 @@ export function mountChat() {
 
   bindCopyButtons(msgs);
 
+  /* ---------- 数学公式（KaTeX 随仓库提供，首次打开面板时按需加载） ---------- */
+  let katexReady = null;
+  function ensureKatex() {
+    if (katexReady) return katexReady;
+    katexReady = new Promise((resolve) => {
+      const css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = '/assets/vendor/katex/katex.min.css';
+      document.head.append(css);
+
+      const s = document.createElement('script');
+      s.src = '/assets/vendor/katex/katex.min.js';
+      s.onerror = () => resolve(false);
+      s.onload = () => {
+        const a = document.createElement('script');
+        a.src = '/assets/vendor/katex/auto-render.min.js';
+        a.onload = () => resolve(true);
+        a.onerror = () => resolve(false);
+        document.head.append(a);
+      };
+      document.head.append(s);
+    });
+    return katexReady;
+  }
+
+  let lastTypeset = 0;
+  function typeset(el, force) {
+    if (!window.renderMathInElement || !el) return;
+    const now = performance.now();
+    if (!force && now - lastTypeset < 160) return;
+    lastTypeset = now;
+    try {
+      window.renderMathInElement(el, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '\\[', right: '\\]', display: true },
+          { left: '$', right: '$', display: false },
+          { left: '\\(', right: '\\)', display: false },
+        ],
+        throwOnError: false,
+        ignoredTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code', 'option'],
+      });
+    } catch { /* 公式有问题就保持原文 */ }
+  }
+
   /* ---------- 打开 / 关闭 ---------- */
   function open() {
     if (!state.key) showSetup(true);
@@ -117,6 +162,7 @@ export function mountChat() {
     panel.setAttribute('aria-hidden', 'false');
     fab.classList.add('hidden');
     document.body.classList.add('ai-lock');
+    ensureKatex().then((ok) => { if (ok && state.messages.length) typeset(msgs, true); });
     setTimeout(() => input.focus({ preventScroll: true }), 60);
     scrollBottom(true);
   }
@@ -327,14 +373,16 @@ export function mountChat() {
       return;
     }
     msgs.innerHTML = state.messages.map(bubble).join('');
+    typeset(msgs, true);
   }
 
-  function paintLast() {
+  function paintLast(force) {
     const last = msgs.lastElementChild;
     const m = state.messages[state.messages.length - 1];
     if (!last || !m) return;
     const atBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 120;
     last.innerHTML = bubbleInner(m);
+    typeset(last, force);
     if (atBottom) scrollBottom();
   }
 
@@ -501,7 +549,7 @@ export function mountChat() {
       sendBtn.textContent = '发送';
       sendBtn.classList.remove('stop');
       if (raf) { cancelAnimationFrame(raf); raf = 0; }
-      paintLast();
+      paintLast(true);   // 收尾强制排一次公式
       scrollBottom();
     }
   }

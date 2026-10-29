@@ -54,8 +54,63 @@ function tableFrom(lines, i) {
   return { html: `<table><thead><tr>${th}</tr></thead><tbody>${tb}</tbody></table>`, next: j };
 }
 
+/**
+ * 先把数学公式摘出来，避免被 markdown 的 * _ 之类语法拆坏（LaTeX 里全是这些符号）。
+ * 返回替换后的文本和取出的公式表。
+ */
+function protectMath(src) {
+  const tokens = [];
+  const keep = (s) => `\u0002${tokens.push(s) - 1}\u0002`;
+
+  const mathify = (seg) => {
+    if (!seg) return seg;
+    return seg
+      .replace(/\$\$([\s\S]+?)\$\$/g, (m) => keep(m))
+      .replace(/\\\[([\s\S]+?)\\\]/g, (m) => keep(m))
+      .replace(/\\\(([\s\S]+?)\\\)/g, (m) => keep(m))
+      // 行内 $...$：开头不跟空白、结尾前不跟空白，且不是 $$
+      .replace(/(^|[^\\$])\$(?!\s)([^\n$]+?)(?<!\s)\$(?!\$)/g,
+        (m, pre, body) => `${pre}${keep(`$${body}$`)}`);
+  };
+
+  // 代码围栏内部不处理
+  const lines = src.split('\n');
+  const parts = [];
+  let buf = [];
+  let inFence = false;
+
+  for (const line of lines) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      if (!inFence) {
+        parts.push(mathify(buf.join('\n')));
+        buf = [line];
+        inFence = true;
+      } else {
+        buf.push(line);
+        parts.push(buf.join('\n'));   // 代码块原样保留
+        buf = [];
+        inFence = false;
+      }
+    } else {
+      buf.push(line);
+    }
+  }
+  parts.push(inFence ? buf.join('\n') : mathify(buf.join('\n')));
+
+  return { text: parts.join('\n'), tokens };
+}
+
+const restoreMath = (html, tokens) =>
+  html.replace(/\u0002(\d+)\u0002/g, (_, i) => esc(tokens[Number(i)]));
+
 /** 把 markdown 转成 html 字符串 */
 export function renderMarkdown(src) {
+  const { text, tokens } = protectMath(String(src ?? '').replace(/\r\n?/g, '\n'));
+  const html = renderBlocks(text);
+  return tokens.length ? restoreMath(html, tokens) : html;
+}
+
+function renderBlocks(src) {
   const lines = String(src ?? '').replace(/\r\n?/g, '\n').split('\n');
   const out = [];
   let i = 0;

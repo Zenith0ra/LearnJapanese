@@ -207,6 +207,8 @@ await check('点击打开面板', `(document.querySelector('#aiFab').click(), 1)
 await sleep(500);
 await check('面板展开', `document.querySelector('#aiPanel').classList.contains('open')`, true);
 await check('输入框可用', `!!document.querySelector('#aiInput')`);
+await sleep(1500);
+await check('KaTeX 已按需加载', `typeof window.katex !== 'undefined' && typeof window.renderMathInElement === 'function'`);
 await check('发一条消息', `(() => {
   const i = document.querySelector('#aiInput');
   i.value = '你好';
