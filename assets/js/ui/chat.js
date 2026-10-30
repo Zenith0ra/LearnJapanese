@@ -25,6 +25,7 @@ const ICONS = {
   key: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="12" r="3.2"/><path d="M11.2 12H20M17 12v3M14 12v2.4"/></svg>',
   trash: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>',
   close: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
   img: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.4"/><path d="M21 16l-5-5-6 6"/></svg>',
   file: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>',
 };
@@ -33,6 +34,26 @@ const readLS = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d
 const writeLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* ignore */ } };
 
 let state = null;
+
+/* 本地对话备份 */
+const LS_CHATS = 'lj.ai.chats';
+const LS_CURRENT = 'lj.ai.current';
+const MAX_CHATS = 30;
+const MAX_BYTES = 2_000_000;
+
+const newChatId = () => `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+const loadChats = () => { const v = readLS(LS_CHATS, []); return Array.isArray(v) ? v : []; };
+const saveChats = (list) => writeLS(LS_CHATS, list);
+
+/** 存盘时只留文字，图片/文件只留名字（避免 localStorage 被 base64 撑爆） */
+const toSaved = (m) => ({
+  role: m.role,
+  text: m.text || '',
+  ...(m.reasoning ? { reasoning: m.reasoning } : {}),
+  ...(m.error ? { error: true } : {}),
+  ...(m.files?.length ? { files: m.files.map((f) => ({ name: f.name })) } : {}),
+  ...(m.images?.length ? { images: m.images.map((i) => ({ name: i.name })) } : {}),
+});
 
 export function mountChat() {
   if (state) return; // 只挂一次
@@ -46,7 +67,20 @@ export function mountChat() {
     attachments: [],    // { kind:'image'|'text', name, dataUrl?, text? }
     busy: false,
     abort: null,
+    chatId: newChatId(),
   };
+
+  // 恢复上次的对话
+  {
+    const list = loadChats();
+    const want = readLS(LS_CURRENT, undefined);
+    // 没记录过就恢复最近一条；记录过但找不到（刚点过「新对话」）就保持空白
+    const cur = want === undefined ? list[0] : list.find((c) => c.id === want);
+    if (cur?.messages?.length) {
+      state.chatId = cur.id;
+      state.messages = cur.messages.map((m) => ({ ...m, streaming: false }));
+    }
+  }
 
   const host = document.createElement('div');
   host.className = 'ai-root';
@@ -57,11 +91,13 @@ export function mountChat() {
       <header class="ai-head">
         <b>AI 助手</b>
         <div class="ai-head-tools">
+          <button class="icon-btn" id="aiHistBtn" type="button" title="历史对话">${ICONS.clock}</button>
           <button class="icon-btn" id="aiKey" type="button" title="设置 API Key">${ICONS.key}</button>
-          <button class="icon-btn" id="aiClear" type="button" title="清空对话">${ICONS.trash}</button>
+          <button class="icon-btn" id="aiClear" type="button" title="新对话">${ICONS.trash}</button>
           <button class="icon-btn" id="aiClose" type="button" title="关闭（Esc）">${ICONS.close}</button>
         </div>
       </header>
+      <div class="ai-hist" id="aiHist" hidden></div>
 
       <div class="ai-sub">
         <div class="seg" id="aiModels">
@@ -316,12 +352,12 @@ export function mountChat() {
     if (on) {
       const i = $('#aiKeyInput');
       i.value = '';
-      i.placeholder = state.key ? '已保存，输入新 key 可替换' : 'sk-...';
+      i.placeholder = 'sk-...';
       setTimeout(() => i.focus({ preventScroll: true }), 40);
     }
   }
   $('#aiKey').addEventListener('click', () => showSetup(setup.hidden));
-  keyChip.addEventListener('click', () => showSetup(true));
+  keyChip.addEventListener('click', () => showSetup(setup.hidden));
   $('#aiKeySave').addEventListener('click', () => {
     const v = $('#aiKeyInput').value.trim();
     const err = $('#aiKeyErr');
@@ -341,6 +377,99 @@ export function mountChat() {
   });
   $('#aiKeyInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); $('#aiKeySave').click(); }
+  });
+
+  /* ---------- 历史对话（存在本机 localStorage） ---------- */
+  const histBtn = $('#aiHistBtn');
+  const hist = $('#aiHist');
+
+  function persistChat() {
+    const msgs = state.messages.filter((m) => m.role === 'user' || m.text || m.reasoning);
+    if (!msgs.length) return;
+    const first = msgs.find((m) => m.role === 'user');
+    const rawTitle = first?.text || (first?.images?.length ? '图片对话' : '新对话');
+    const entry = { id: state.chatId, title: rawTitle.slice(0, 28), updated: Date.now(), messages: msgs.map(toSaved) };
+
+    const list = loadChats();
+    const i = list.findIndex((c) => c.id === state.chatId);
+    if (i >= 0) list[i] = entry; else list.unshift(entry);
+    list.sort((a, b) => b.updated - a.updated);
+
+    const keep = list.slice(0, MAX_CHATS);
+    while (keep.length > 1 && JSON.stringify(keep).length > MAX_BYTES) keep.pop();
+    saveChats(keep);
+    writeLS(LS_CURRENT, state.chatId);
+  }
+
+  const fmtTime = (t) => {
+    const d = new Date(t);
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return d.toDateString() === new Date().toDateString()
+      ? `${hh}:${mm}`
+      : `${d.getMonth() + 1}/${d.getDate()} ${hh}:${mm}`;
+  };
+
+  function paintHist() {
+    const list = loadChats();
+    hist.innerHTML = list.length
+      ? `${list.map((c) => `
+          <div class="ah-item${c.id === state.chatId ? ' on' : ''}" data-id="${c.id}">
+            <div class="ah-title">${esc(c.title || '新对话')}</div>
+            <div class="ah-meta">${fmtTime(c.updated)} · ${c.messages.length} 条</div>
+            <button type="button" data-del="${c.id}" title="删除">×</button>
+          </div>`).join('')}
+        <div class="ah-foot"><button type="button" id="ahClearAll">清空全部历史</button></div>`
+      : '<div class="ah-empty">还没有保存的对话</div>';
+  }
+
+  function startNewChat() {
+    state.messages = [];
+    state.chatId = newChatId();
+    writeLS(LS_CURRENT, state.chatId);
+    renderMessages();
+  }
+
+  function loadChat(id) {
+    if (state.busy) { toast('正在回复中，稍等一下'); return; }
+    const c = loadChats().find((x) => x.id === id);
+    if (!c) return;
+    state.chatId = id;
+    state.messages = c.messages.map((m) => ({ ...m, streaming: false }));
+    writeLS(LS_CURRENT, id);
+    hist.hidden = true;
+    renderMessages();
+    scrollBottom(true);
+  }
+
+  function deleteChat(id) {
+    saveChats(loadChats().filter((c) => c.id !== id));
+    if (id === state.chatId) startNewChat();
+    paintHist();
+  }
+
+  histBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hist.hidden = !hist.hidden;
+    if (!hist.hidden) paintHist();
+  });
+
+  hist.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const del = e.target.closest('[data-del]');
+    if (del) { deleteChat(del.dataset.del); return; }
+    if (e.target.closest('#ahClearAll')) {
+      saveChats([]);
+      startNewChat();
+      paintHist();
+      return;
+    }
+    const item = e.target.closest('.ah-item');
+    if (item) loadChat(item.dataset.id);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!hist.hidden && !hist.contains(e.target) && e.target !== histBtn) hist.hidden = true;
   });
 
   /* ---------- 模型 / 思考 ---------- */
@@ -472,7 +601,9 @@ export function mountChat() {
   function bubbleInner(m) {
     if (m.role === 'user') {
       const imgs = m.images?.length
-        ? `<div class="ai-imgs">${m.images.map((i) => `<img src="${i.dataUrl}" alt="${esc(i.name)}">`).join('')}</div>`
+        ? `<div class="ai-imgs">${m.images.map((i) => (i.dataUrl
+            ? `<img src="${i.dataUrl}" alt="${esc(i.name)}">`
+            : `<span class="ai-file">🖼 ${esc(i.name || '图片')}</span>`)).join('')}</div>`
         : '';
       const files = m.files?.length
         ? `<div class="ai-files">${m.files.map((f) => `<span class="ai-file">${esc(f.name)}</span>`).join('')}</div>`
@@ -543,14 +674,15 @@ export function mountChat() {
         }
       }
 
-      const imgs = m.images ?? [];
+      // 只有带真实数据的图片能发出去（历史里恢复的只有文件名）
+      const imgs = (m.images ?? []).filter((x) => x.dataUrl);
       if (imgs.length && i === lastUserIdx) {
         const blocks = [];
         if (text) blocks.push({ type: 'text', text });
         for (const img of imgs) blocks.push({ type: 'image_url', image_url: { url: img.dataUrl } });
         return { role: 'user', content: blocks };
       }
-      if (imgs.length) text += `${text ? '\n' : ''}（此前上传过 ${imgs.length} 张图片）`;
+      if (m.images?.length) text += `${text ? '\n' : ''}（此前上传过 ${m.images.length} 张图片）`;
 
       return { role: 'user', content: text };
     }).filter((m) => (Array.isArray(m.content) ? m.content.length : String(m.content).trim()));
@@ -695,14 +827,16 @@ export function mountChat() {
       if (raf) { cancelAnimationFrame(raf); raf = 0; }
       paintLast(true);   // 收尾强制排一次公式
       scrollBottom();
+      if (state.messages.length) persistChat();
     }
   }
 
   sendBtn.addEventListener('click', send);
   $('#aiClear').addEventListener('click', () => {
-    state.messages = [];
-    renderMessages();
-    toast('对话已清空');
+    persistChat();          // 当前这段先归档到历史
+    startNewChat();
+    hist.hidden = true;
+    toast('已开始新对话');
   });
 
   renderKeyChip();

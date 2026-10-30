@@ -219,6 +219,7 @@ await check('随机模式仍从第一张开始', `document.querySelector('#count
 
 /* ---------- AI 面板 ---------- */
 await evaluate(`localStorage.setItem('lj.ai.key', JSON.stringify('sk-test-invalid-key-000'))`);
+await evaluate(`localStorage.removeItem('lj.ai.chats'); localStorage.removeItem('lj.ai.current')`);
 await go('#/');
 await check('AI 浮动按钮存在', `!!document.querySelector('#aiFab')`);
 await check('点击打开面板', `(document.querySelector('#aiFab').click(), 1)`);
@@ -238,6 +239,16 @@ await check('发一条消息', `(() => {
 await check('出现用户气泡', `document.querySelectorAll('.ai-msg.me').length`, 1);
 await sleep(5000);
 await check('拿到回复或错误提示', `!!document.querySelector('.ai-md, .ai-error')`);
+await check('对话已备份到本机', `(JSON.parse(localStorage.getItem('lj.ai.chats') || '[]')).length`, 1);
+await check('历史面板能打开', `(document.querySelector('#aiHistBtn').click(), document.querySelectorAll('.ah-item').length)`, 1);
+await check('当前对话在历史里高亮', `document.querySelectorAll('.ah-item.on').length`, 1);
+await evaluate(`location.reload()`);
+await sleep(2200);
+await check('刷新后对话被恢复', `document.querySelectorAll('.ai-msg').length`, (v) => v >= 2);
+await check('重新打开面板', `(document.querySelector('#aiFab').click(), 1)`);
+await sleep(400);
+await check('历史列表仍在', `(document.querySelector('#aiHistBtn').click(), document.querySelectorAll('.ah-item').length)`, 1);
+await check('新对话后回到空白', `(document.querySelector('#aiClear').click(), document.querySelectorAll('.ai-msg').length)`, 0);
 
 // 悬浮窗拖动：按住标题栏拖一段，位置要变且记住
 {

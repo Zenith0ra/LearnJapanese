@@ -1084,3 +1084,38 @@ select.sel {
   content: ""; width: 5px; height: 5px; border-radius: 50%;
   background: var(--ok); flex-shrink: 0;
 }
+/* 历史对话下拉 */
+.ai-hist {
+  position: absolute; top: 100px; right: 10px; z-index: 70;
+  width: 290px; max-height: 340px; overflow: auto;
+  padding: 6px; border-radius: 11px;
+  background: var(--surface-2); border: 1px solid var(--line-2);
+  box-shadow: 0 16px 38px -16px rgba(30,20,10,.5);
+  scrollbar-width: thin; scrollbar-color: var(--line-2) transparent;
+}
+.ai-hist::-webkit-scrollbar { width: 10px; }
+.ai-hist::-webkit-scrollbar-thumb {
+  background: var(--line-2); background-clip: padding-box;
+  border: 3px solid transparent; border-radius: 99px;
+}
+.ah-item {
+  position: relative; padding: 7px 26px 7px 9px; border-radius: 8px; cursor: pointer;
+}
+.ah-item:hover { background: var(--surface-2); }
+.ah-item.on { background: var(--accent-bg); }
+.ah-title {
+  font-size: 13px; color: var(--ink-2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ah-item.on .ah-title { color: var(--accent); font-weight: 600; }
+.ah-meta { font-size: 11px; color: var(--faint); margin-top: 2px; }
+.ah-item button {
+  position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+  width: 20px; height: 20px; border-radius: 50%; line-height: 1;
+  color: var(--faint); font-size: 15px;
+}
+.ah-item button:hover { color: var(--accent); background: var(--bg); }
+.ah-foot { border-top: 1px solid var(--line); margin-top: 4px; padding: 6px 4px 2px; }
+.ah-foot button { font-size: 12px; color: var(--faint); padding: 4px 6px; border-radius: 6px; }
+.ah-foot button:hover { color: var(--accent); background: var(--surface-2); }
+.ah-empty { padding: 16px 10px; font-size: 12.5px; color: var(--faint); text-align: center; }
