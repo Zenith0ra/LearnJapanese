@@ -84,11 +84,19 @@ export async function render(root) {
       <div class="card-progress"><i id="bar" style="width:0%"></i></div>
 
       <div class="card-stage">
-        <div class="flashcard" id="card" role="button" tabindex="0" aria-label="点击翻面 / 下一张">
+        <div class="flashcard" id="card" role="button" tabindex="0" aria-label="点击翻面">
           <button class="card-mark" id="mark" type="button" aria-pressed="false" title="标记已掌握（M）">
             <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
                  stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
             <span>掌握</span>
+          </button>
+          <button class="card-nav prev" id="prevBtn" type="button" aria-label="上一个（↑ / ←）" title="上一个（↑ / ←）">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+          </button>
+          <button class="card-nav next" id="nextBtn" type="button" aria-label="下一个（↓ / →）" title="下一个（↓ / →）">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+                 stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
           </button>
           <div class="face front" id="front"></div>
           <div class="face back" id="back"></div>
@@ -227,6 +235,8 @@ export async function render(root) {
 
     counter.textContent = finished() ? `${total} / ${total}` : `${Math.min(state.i + 1, total)} / ${total}`;
     bar.style.width = `${Math.min(100, (state.i / Math.max(1, total)) * 100)}%`;
+    const prevBtn = root.querySelector('#prevBtn');
+    if (prevBtn) prevBtn.disabled = state.i <= 0;
 
     if (!w) {
       const all = pool().length;
@@ -337,31 +347,29 @@ export async function render(root) {
   document.addEventListener('click', closePop);
   window.addEventListener('hashchange', () => document.removeEventListener('click', closePop), { once: true });
 
-  function reveal() {
+  /** 翻面：只切正反面，不换词 */
+  function flip() {
     if (finished()) return;
-    state.revealed = true;
+    state.revealed = !state.revealed;
     paint();
   }
 
-  function next() {
-    if (finished()) { restart(); return; }
-    if (!state.revealed) { reveal(); return; }
-    state.i += 1;
-    state.revealed = false;
-    // 关掉过渡再换内容：否则背面淡出的那 160ms 里会看到下一张的答案
-    card.classList.add('no-fade');
-    paint();
-    void card.offsetWidth;
-    card.classList.remove('no-fade');
-  }
+  /** 换词：delta = -1 上一个 / +1 下一个 */
+  function move(delta) {
+    if (!state.deck.length) return;
+    if (finished()) { if (delta > 0) restart(); return; }
 
-  function prev() {
-    if (state.i === 0) {
-      if (state.revealed) { state.revealed = false; paint(); }
+    const to = state.i + delta;
+    if (to < 0) return;
+    if (to >= state.deck.length) {          // 最后一张再往下 = 背完
+      state.i = state.deck.length;
+      state.revealed = false;
+      paint();
       return;
     }
-    state.i -= 1;
+    state.i = to;
     state.revealed = false;
+    // 关掉过渡再换内容：否则背面淡出的那 160ms 里会看到下一张的答案
     card.classList.add('no-fade');
     paint();
     void card.offsetWidth;
@@ -396,7 +404,11 @@ export async function render(root) {
     return { label: `背单词 · 第 ${w.num} 課 · ${surfaceOf(w)}`, text: `${head}\n${body}` };
   });
 
-  card.addEventListener('click', () => next());
+  card.addEventListener('click', () => { if (finished()) restart(); else flip(); });
+
+  // 卡片两侧的箭头：切上一个 / 下一个，不触发翻面
+  root.querySelector('#prevBtn').addEventListener('click', (e) => { e.stopPropagation(); move(-1); });
+  root.querySelector('#nextBtn').addEventListener('click', (e) => { e.stopPropagation(); move(1); });
   root.querySelector('#restart').addEventListener('click', (e) => {
     e.stopPropagation();
     restart();
@@ -420,15 +432,16 @@ export async function render(root) {
     restart();
   });
 
-  /* 键盘：← 上一张；空格 / 回车 / → 都是「先翻面，再下一张」；M 标记掌握 */
+  /* 键盘：↑/← 上一个，↓/→ 下一个，空格 / 回车 翻面，M 标记掌握 */
   const onKey = (e) => {
     const t = e.target;
     if (t instanceof Element && t.closest('button, .dd, input, select, textarea')) return;
     if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleMastered(); return; }
-    if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); return; }
-    if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); move(-1); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); move(1); return; }
+    if (e.key === ' ' || e.key === 'Enter') {
       e.preventDefault();
-      next();
+      flip();
     }
   };
   document.addEventListener('keydown', onKey);
