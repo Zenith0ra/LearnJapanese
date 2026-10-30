@@ -160,6 +160,9 @@ await check('中级语法分组', `document.querySelectorAll('.gpage-item').leng
 
 /* ---------- 背单词 ---------- */
 await go('#/cards?ref=001');
+// 随机顺序下第一张可能是没有声调标注的词，先切顺序让断言稳定
+await check('先切顺序（固定出题）', `(document.querySelector('#orderSeg [data-order=order]').click(), 1)`);
+await sleep(350);
 await check('卡片有词', `!!document.querySelector('#front .front-cn, #front .front-ja')`);
 await check('没有多余的揭晓按钮', `document.querySelector('#action') === null`, true);
 await check('点卡片翻面', `(document.querySelector('#card').click(), 1)`);
