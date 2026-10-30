@@ -4,6 +4,7 @@
 import { $, $$ } from './util.js';
 import { applyTheme, cycleTheme } from './store.js';
 import { mountChat } from './ui/chat.js';
+import { resetContext } from './context.js';
 import * as home from './pages/home.js';
 import * as lesson from './pages/lesson.js';
 import * as words from './pages/words.js';
@@ -44,12 +45,14 @@ async function route() {
     return;
   }
 
+  resetContext(); // 换页先清掉上一页的上下文
   setNav(hit.nav);
   document.body.classList.toggle('at-home', clean === '/' || clean === '');
   app.innerHTML = '<div class="panel muted">载入中…</div>';
   try {
     const arg = hit.arg ? clean.match(hit.re)[hit.arg] : undefined;
     await hit.page.render(app, arg);
+    document.dispatchEvent(new Event('lj:ctx')); // 页面渲染完，通知 AI 面板刷新上下文
   } catch (err) {
     console.error(err);
     app.innerHTML = `<div class="panel"><h1 style="font-size:18px">加载失败</h1>

@@ -4,6 +4,7 @@ import { lessonsAll, lessonById, neighbours, wordsOf, grammarOf } from '../data.
 import { prefs, setPref } from '../store.js';
 import * as audio from '../audio.js';
 import { esc } from '../util.js';
+import { setContextProvider, plainJa, blockText, LEVEL_NAME } from '../context.js';
 
 const LEVEL = { basic: '初级', middle: '中级' };
 const isGap = (s) => /^-{1,2}$/.test(String(s).trim());
@@ -151,8 +152,12 @@ export async function render(root, id) {
     pane.innerHTML = `<div class="panel${p.ruby ? '' : ' hide-ruby'}${p.tr ? ' show-tr' : ''}">${chapterBody(ch)}</div>`;
   }
 
+  let wsCache = null;
+  let gsCache = null;
+
   async function showWords() {
     const ws = await wordsOf(l.ref);
+    wsCache = ws;
     const byPart = l.level === 'middle' && ws.some((w) => w.part > 1);
     const parts = byPart ? [...new Set(ws.map((w) => w.part))].sort() : [null];
     const inner = parts.map((part) => {
@@ -171,6 +176,7 @@ export async function render(root, id) {
 
   async function showGrammar() {
     const gs = await grammarOf(l.ref);
+    gsCache = gs;
     pane.innerHTML = `<div class="panel">${gs.length
       ? gs.map((g) => `
         <div class="g-item">
@@ -188,6 +194,7 @@ export async function render(root, id) {
     const isText = typeof current === 'number';
     optsEl.style.opacity = isText ? '1' : '.35';
     optsEl.style.pointerEvents = isText ? '' : 'none';
+    document.dispatchEvent(new Event('lj:ctx'));
     if (current === 'words') { showWords(); return; }
     if (current === 'grammar') { showGrammar(); return; }
     paint();
@@ -212,6 +219,37 @@ export async function render(root, id) {
   if (q.has('ruby')) { p.ruby = q.get('ruby') !== '0'; root.querySelector('#optRuby').checked = p.ruby; }
   const want = q.get('tab');
   selectTab(want && tabsEl.querySelector(`button[data-tab="${want}"]`) ? want : 0);
+
+  /* ---------- 给 AI 的上下文 ---------- */
+  setContextProvider(() => {
+    const base = `【页面】课文\n【课次】${LEVEL_NAME[l.level]} 第 ${l.num} 課　${plain(l.title)}`;
+
+    if (current === 'words') {
+      const ws = wsCache ?? [];
+      return {
+        label: `生词 · 第 ${l.num} 課`,
+        text: `${base}\n【正在看】本课生词表（${ws.length} 个）\n${ws.slice(0, 60)
+          .map((w) => `${plainJa(w.word || w.kanji || '') || plain(w.kana)}（${plain(w.kana)}）　${w.pos || ''}　${w.desc}`)
+          .join('\n')}`,
+      };
+    }
+
+    if (current === 'grammar') {
+      const gs = gsCache ?? [];
+      return {
+        label: `语法 · 第 ${l.num} 課`,
+        text: `${base}\n【正在看】本课语法（${gs.length} 条）\n${gs
+          .map((g) => `・${plainJa(g.expression)}${g.short ? `（${g.short}）` : ''}${g.explanation ? `　${g.explanation}` : ''}`)
+          .join('\n')}`,
+      };
+    }
+
+    const ch = chapters[current] ?? chapters[0];
+    return {
+      label: `课文 · 第 ${l.num} 課 · ${ch.label}`,
+      text: `${base}\n【正在看】${ch.label}\n${blockText(ch.block, ch.tr) || '（本课没有这一部分）'}`,
+    };
+  });
 
   /* ---------- 键盘：← → 翻课，空格播放 ---------- */
   const onKey = (e) => {

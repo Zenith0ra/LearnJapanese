@@ -5,6 +5,7 @@
  */
 import { renderMarkdown, bindCopyButtons } from './markdown.js';
 import { esc } from '../util.js';
+import { getContext } from '../context.js';
 
 const API_URL = 'https://api.deepseek.com/chat/completions';
 const LS_KEY = 'lj.ai.key';
@@ -85,6 +86,7 @@ export function mountChat() {
 
       <div class="ai-foot">
         <div class="ai-attach" id="aiAttach"></div>
+        <div class="ai-ctx" id="aiCtx" hidden></div>
         <textarea id="aiInput" rows="1" placeholder="问点什么…" spellcheck="false"></textarea>
         <div class="ai-bar">
           <button class="btn btn-sm" id="aiImgBtn" type="button">${ICONS.img}<span>图片</span></button>
@@ -109,6 +111,18 @@ export function mountChat() {
   const sendBtn = $('#aiSend');
   const tip = $('#aiTip');
   const attachBox = $('#aiAttach');
+  const ctxEl = $('#aiCtx');
+
+  // 显示「已读取当前页面：背单词 · 第 3 課 · デパート」这类提示
+  function refreshCtx() {
+    const c = getContext();
+    ctxEl.hidden = !c;
+    ctxEl.textContent = c ? `已读取：${c.label}` : '';
+    ctxEl.title = c ? c.text.slice(0, 600) : '';
+  }
+  document.addEventListener('hashchange', refreshCtx);
+  document.addEventListener('lj:ctx', refreshCtx);
+  input.addEventListener('focus', refreshCtx);
 
   bindCopyButtons(msgs);
 
@@ -262,6 +276,7 @@ export function mountChat() {
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     fab.classList.add('hidden');
+    refreshCtx();
     ensureKatex().then((ok) => { if (ok && state.messages.length) typeset(msgs, true); });
     setTimeout(() => input.focus({ preventScroll: true }), 80);
     scrollBottom(true);
@@ -516,7 +531,7 @@ export function mountChat() {
     // 只有最后一轮用户消息带图片：更早的图片只留文字说明，省 token 和请求体
     const lastUserIdx = hist.map((m) => m.role).lastIndexOf('user');
 
-    return hist.map((m, i) => {
+    const out = hist.map((m, i) => {
       if (m.role === 'assistant') {
         return { role: 'assistant', content: m.error ? '（上一条请求失败，已忽略）' : (m.text || '') };
       }
@@ -539,6 +554,16 @@ export function mountChat() {
 
       return { role: 'user', content: text };
     }).filter((m) => (Array.isArray(m.content) ? m.content.length : String(m.content).trim()));
+
+    // 带上用户此刻正在看的页面内容（每次发送现取，所以翻卡/切标签都会跟手）
+    const ctx = getContext();
+    if (ctx?.text) {
+      out.unshift({
+        role: 'system',
+        content: '用户正在浏览「标准日本语」学习站的下面这一屏内容。回答时可以直接利用它（比如解释当前这个词、这篇课文或这条语法），但不必把页面内容复述一遍。\n\n' + ctx.text,
+      });
+    }
+    return out;
   }
 
   function friendlyError(status, raw) {
@@ -556,6 +581,8 @@ export function mountChat() {
 
     const text = input.value.trim();
     if (!text && !state.attachments.length) return;
+
+    refreshCtx();   // 发送前再对一次当前页面
 
     const images = state.attachments.filter((a) => a.kind === 'image');
     const files = state.attachments.filter((a) => a.kind === 'text');

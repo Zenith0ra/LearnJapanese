@@ -5,6 +5,7 @@ import { prefs, setPref } from '../store.js';
 import * as audio from '../audio.js';
 import { esc } from '../util.js';
 import { dropdown } from '../ui/dropdown.js';
+import { setContextProvider, LEVEL_NAME } from '../context.js';
 
 const MODES = [
   { id: 'cn', label: '中文' },
@@ -254,6 +255,7 @@ export async function render(root) {
     }
 
     paintMastered();
+    document.dispatchEvent(new Event('lj:ctx'));
   }
 
   /* ---------- 已掌握 ---------- */
@@ -365,6 +367,34 @@ export async function render(root) {
     void card.offsetWidth;
     card.classList.remove('no-fade');
   }
+
+  /* ---------- 给 AI 的上下文 ---------- */
+  setContextProvider(() => {
+    const w = current();
+    const [lv, num] = state.scope === 'all' ? ['', ''] : state.scope.split(':');
+    const scopeName = state.scope === 'all' ? '全部词条' : `${LEVEL_NAME[lv]} 第 ${num} 課`;
+    const modeName = MODES.find((m) => m.id === state.mode)?.label ?? '';
+    const head = [
+      '【页面】背单词',
+      `【范围】${scopeName}`,
+      `【出题方向】${modeName}　【顺序】${state.order === 'order' ? '顺序' : '随机'}`,
+    ].join('\n');
+
+    if (!w) return { label: `背单词 · ${scopeName}`, text: `${head}\n【状态】这一组已经背完` };
+
+    const body = [
+      '【正在看的词】',
+      `　写法：${w.kanji || kanaOf(w)}`,
+      `　假名：${kanaOf(w)}`,
+      `　声调：${pitchNum(w) ?? '数据里没有标注'}`,
+      `　词性：${w.pos || '未标注'}`,
+      `　中文：${w.desc}`,
+      `　出处：${LEVEL_NAME[w.level]} 第 ${w.num} 課`,
+      `　当前是否翻面：${state.revealed ? '已翻到背面（答案可见）' : '只显示正面'}`,
+    ].join('\n');
+
+    return { label: `背单词 · 第 ${w.num} 課 · ${surfaceOf(w)}`, text: `${head}\n${body}` };
+  });
 
   card.addEventListener('click', () => next());
   root.querySelector('#restart').addEventListener('click', (e) => {

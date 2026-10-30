@@ -259,6 +259,21 @@ await sleep(400);
 await check('面板已关闭', `document.querySelector('#aiPanel').classList.contains('open')`, false);
 await evaluate(`localStorage.removeItem('lj.ai.key')`);
 
+/* ---------- AI 能读到当前页面 ---------- */
+await go('#/lesson/l3');
+await sleep(600);
+await check('打开面板', `(document.querySelector('#aiFab').click(), 1)`);
+await sleep(800);
+await check('AI 已读取当前课文', `document.querySelector('#aiCtx').textContent.includes('课文')`, true);
+await go('#/cards?ref=003');
+await sleep(1000);
+await check('切到背单词后上下文跟着变', `document.querySelector('#aiCtx').textContent.includes('背单词')`, true);
+await go('#/grammar');
+await sleep(900);
+await check('语法页也能读到', `document.querySelector('#aiCtx').textContent.includes('语法')`, true);
+await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
+await sleep(300);
+
 /* ---------- 主题 ---------- */
 await check('切主题', `(document.querySelector('#themeBtn').click(), document.documentElement.dataset.theme)`, (v) => ['auto', 'light', 'dark'].includes(v));
 

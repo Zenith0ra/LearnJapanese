@@ -4,6 +4,7 @@ import { lessonsAll, wordsAll } from '../data.js';
 import * as audio from '../audio.js';
 import { esc, debounce } from '../util.js';
 import { dropdown } from '../ui/dropdown.js';
+import { setContextProvider, plainJa, LEVEL_NAME } from '../context.js';
 
 const PAGE = 80;
 
@@ -11,6 +12,7 @@ export async function render(root) {
   const [{ index }, words] = await Promise.all([lessonsAll(), wordsAll()]);
 
   const state = { q: '', scope: 'all', page: 0 };
+  let lastPage = { rows: [], slice: [], total: 0, pages: 1 };
 
   root.innerHTML = `
     <header class="hero slim">
@@ -91,6 +93,7 @@ export async function render(root) {
     const slice = rows.slice(state.page * PAGE, state.page * PAGE + PAGE);
 
     countEl.textContent = `${rows.length.toLocaleString()} 条`;
+    lastPage = { slice, total: rows.length, pages };
 
     tbody.innerHTML = slice.map((w) => `
       <tr data-read="${esc(speakable(w.kana))}">
@@ -126,4 +129,20 @@ export async function render(root) {
   });
 
   paint();
+
+  /* ---------- 给 AI 的上下文 ---------- */
+  setContextProvider(() => {
+    const [lv, num] = state.scope.includes(':') ? state.scope.split(':') : [null, null];
+    const scopeName = state.scope === 'all' ? '全部课次'
+      : lv === 'lv' ? `${LEVEL_NAME[num]} · 全部` : `${LEVEL_NAME[lv]} 第 ${num} 課`;
+    const head = [
+      '【页面】单词总表',
+      `【筛选】${scopeName}${state.q.trim() ? `　搜索「${state.q.trim()}」` : ''}`,
+      `【结果】共 ${lastPage.total} 条，第 ${state.page + 1} / ${lastPage.pages} 页，本页 ${lastPage.slice.length} 条`,
+    ].join('\n');
+    const body = lastPage.slice
+      .map((w) => `${plainJa(w.kana)}　${plainJa(w.word || w.kanji || '')}　${w.pos || ''}　${w.desc}　${LEVEL_NAME[w.level]}第${w.num}課`)
+      .join('\n');
+    return { label: `单词总表 · ${scopeName}${state.q.trim() ? ` · ${state.q.trim()}` : ''}`, text: `${head}\n${body}` };
+  });
 }

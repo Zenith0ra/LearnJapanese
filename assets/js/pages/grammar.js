@@ -2,10 +2,12 @@
 import { ja } from '../ruby.js';
 import { grammarAll } from '../data.js';
 import { esc, debounce } from '../util.js';
+import { setContextProvider, plainJa } from '../context.js';
 
 export async function render(root) {
   const all = await grammarAll();
   const state = { q: '', level: 'all' };
+  let lastRows = [];
 
   root.innerHTML = `
     <header class="hero slim">
@@ -39,6 +41,7 @@ export async function render(root) {
       (state.level === 'all' || g.level === state.level) &&
       (!q || g.expression.includes(q) || g.explanation.includes(q) || g.short.includes(q))
     );
+    lastRows = rows;
     count.textContent = `${rows.length} 条`;
 
     // 按课分组
@@ -78,4 +81,14 @@ export async function render(root) {
   });
 
   paint();
+
+  /* ---------- 给 AI 的上下文 ---------- */
+  setContextProvider(() => {
+    const lvName = state.level === 'all' ? '全部' : state.level === 'basic' ? '初级' : '中级';
+    const head = `【页面】语法总表\n【筛选】${lvName}${state.q.trim() ? `　搜索「${state.q.trim()}」` : ''}\n【结果】${lastRows.length} 条`;
+    const body = lastRows.slice(0, 60)
+      .map((g) => `・${plainJa(g.expression)}${g.short ? `（${g.short}）` : ''}${g.explanation ? `　${g.explanation}` : ''}`)
+      .join('\n');
+    return { label: `语法 · ${lvName}${state.q.trim() ? ` · ${state.q.trim()}` : ''}`, text: `${head}\n${body}` };
+  });
 }
