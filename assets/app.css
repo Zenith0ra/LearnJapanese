@@ -718,8 +718,28 @@ select.sel {
   .lesson-head { text-align: center; }
   .lesson-head .top { justify-content: center; }
   .lesson-meta { justify-content: center; }
-  .cards-bar { justify-content: center; }
-  .cards-bar-end { margin-left: 0; }
+  /* 背单词工具栏：窄屏改成三条满宽的行，比居中的碎块整齐 */
+  .cards-bar { flex-direction: column; align-items: stretch; gap: 8px; }
+  #scopeHost { display: block; }
+  #scopeHost .dd { display: block; }
+  #scopeHost .dd-trigger { width: 100%; max-width: none; justify-content: space-between; }
+  #modes { display: flex; }
+  #modes button { flex: 1; }
+  .cards-bar-end { width: 100%; margin-left: 0; justify-content: space-between; }
+
+  /* 单词/语法筛选：搜索独占一行，下拉和条数并排 */
+  .filters { gap: 8px; }
+  .filters .search { flex: 1 1 100%; max-width: none; }
+  /* 假名要能单行放下：固定列宽 + 小一号字 */
+  .wtable { table-layout: fixed; }
+  .wtable .c-kana { width: 42%; }
+  .wtable .c-kanji { width: 26%; }
+  .wtable .c-desc { width: 32%; }
+  .wtable td { padding: 10px 7px; }
+  .wtable th { padding: 0 7px 9px; }
+  .wtable td.c-kana { font-size: 13px; }
+  .wtable td.c-kanji { font-size: 15.5px; }
+  .wtable td.c-desc { font-size: 15.5px; }
   .hero h1 { font-size: 32px; letter-spacing: .06em; }
   .hero.slim h1 { font-size: 26px; }
   .hero .seg { margin-top: 18px; }
