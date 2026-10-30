@@ -157,16 +157,113 @@ export function mountChat() {
     } catch { /* 公式有问题就保持原文 */ }
   }
 
+  /* ---------- 位置与拖动 ---------- */
+  const POS_LS = 'lj.ai.pos';
+  const FAB_LS = 'lj.ai.fabpos';
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  function placeFab(x, y) {
+    const w = fab.offsetWidth || 48;
+    const h = fab.offsetHeight || 48;
+    const cx = clamp(x, 8, innerWidth - w - 8);
+    const cy = clamp(y, 8, innerHeight - h - 8);
+    fab.classList.add('placed');
+    fab.style.left = `${cx}px`;
+    fab.style.top = `${cy}px`;
+    return { x: cx, y: cy };
+  }
+
+  function placePanel(x, y) {
+    const w = panel.offsetWidth || 420;
+    const h = panel.offsetHeight || 600;
+    const cx = clamp(x, 8, innerWidth - w - 8);
+    const cy = clamp(y, 8, innerHeight - h - 8);
+    panel.style.left = `${cx}px`;
+    panel.style.top = `${cy}px`;
+    return { x: cx, y: cy };
+  }
+
+  function defaultPanelPos() {
+    const w = panel.offsetWidth || 420;
+    const h = panel.offsetHeight || 600;
+    return { x: innerWidth - w - 24, y: Math.max(16, innerHeight - h - 92) };
+  }
+
+  let suppressClick = false;
+
+  /** 通用拖动：只从 handle 上按下才生效，按下按钮不算 */
+  function makeDraggable(el, handle, onMove, onEnd) {
+    let drag = null;
+    handle.addEventListener('pointerdown', (e) => {
+      // 按下按钮/输入框不触发拖动；但 handle 自己就是按钮时（启动按钮）要放行
+      const hit = e.target.closest('button, input, textarea, a');
+      if (e.button !== 0 || (hit && hit !== el)) return;
+      const r = el.getBoundingClientRect();
+      drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, ox: r.left, oy: r.top, moved: false };
+      handle.setPointerCapture?.(e.pointerId);
+      e.preventDefault();
+    });
+    handle.addEventListener('pointermove', (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const dx = e.clientX - drag.sx;
+      const dy = e.clientY - drag.sy;
+      if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+      drag.moved = true;
+      el.classList.add('dragging');
+      onMove(drag.ox + dx, drag.oy + dy);
+    });
+    const finish = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const moved = drag.moved;
+      drag = null;
+      el.classList.remove('dragging');
+      try { handle.releasePointerCapture?.(e.pointerId); } catch { /* ignore */ }
+      onEnd(moved);
+    };
+    handle.addEventListener('pointerup', finish);
+    handle.addEventListener('pointercancel', finish);
+  }
+
+  makeDraggable(panel, panel.querySelector('.ai-head'),
+    (x, y) => placePanel(x, y),
+    (moved) => { if (moved) writeLS(POS_LS, { x: panel.offsetLeft, y: panel.offsetTop }); });
+
+  makeDraggable(fab, fab,
+    (x, y) => placeFab(x, y),
+    (moved) => {
+      suppressClick = moved;
+      if (moved) {
+        writeLS(FAB_LS, { x: fab.offsetLeft, y: fab.offsetTop });
+        setTimeout(() => { suppressClick = false; }, 400);
+      }
+    });
+
+  // 记住过启动按钮的位置就恢复它
+  {
+    const p = readLS(FAB_LS, null);
+    if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) placeFab(p.x, p.y);
+  }
+
+  addEventListener('resize', () => {
+    if (fab.classList.contains('placed')) placeFab(fab.offsetLeft, fab.offsetTop);
+    if (state.open) placePanel(panel.offsetLeft, panel.offsetTop);
+  });
+
   /* ---------- 打开 / 关闭 ---------- */
   function open() {
     if (!state.key) showSetup(true);
     state.open = true;
+    const saved = readLS(POS_LS, null);
+    if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) placePanel(saved.x, saved.y);
+    else {
+      const d = defaultPanelPos();
+      placePanel(d.x, d.y);
+    }
     panel.classList.add('open');
     panel.setAttribute('aria-hidden', 'false');
     fab.classList.add('hidden');
-    document.body.classList.add('ai-lock');
     ensureKatex().then((ok) => { if (ok && state.messages.length) typeset(msgs, true); });
-    setTimeout(() => input.focus({ preventScroll: true }), 60);
+    setTimeout(() => input.focus({ preventScroll: true }), 80);
     scrollBottom(true);
   }
   function close() {
@@ -174,10 +271,12 @@ export function mountChat() {
     panel.classList.remove('open');
     panel.setAttribute('aria-hidden', 'true');
     fab.classList.remove('hidden');
-    document.body.classList.remove('ai-lock');
     fab.focus({ preventScroll: true });
   }
-  fab.addEventListener('click', open);
+  fab.addEventListener('click', () => {
+    if (suppressClick) { suppressClick = false; return; }
+    open();
+  });
   $('#aiClose').addEventListener('click', close);
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && state.open) { e.stopPropagation(); close(); }

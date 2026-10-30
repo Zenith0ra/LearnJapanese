@@ -26,7 +26,7 @@
 
 ## AI 助手
 
-每个页面右下角都有一个 ✦ 按钮，打开右侧对话面板，用的是**你自己的 DeepSeek API Key**：
+每个页面右下角都有一个 ✦ 按钮，打开一个浮动对话窗口（按钮和窗口都能拖动，位置会记住），用的是**你自己的 DeepSeek API Key**：
 
 - 首次打开会让你填 Key（在 [platform.deepseek.com](https://platform.deepseek.com/api_keys) 申请）。
   Key 只保存在这台浏览器的 `localStorage`（`lj.ai.key`），请求**直接从浏览器发往 `api.deepseek.com`**，不经过任何第三方服务器。

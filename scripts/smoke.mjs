@@ -223,6 +223,22 @@ await check('发一条消息', `(() => {
 await check('出现用户气泡', `document.querySelectorAll('.ai-msg.me').length`, 1);
 await sleep(5000);
 await check('拿到回复或错误提示', `!!document.querySelector('.ai-md, .ai-error')`);
+
+// 悬浮窗拖动：按住标题栏拖一段，位置要变且记住
+{
+  const before = await evaluate(`JSON.stringify({ x: document.querySelector('#aiPanel').offsetLeft, y: document.querySelector('#aiPanel').offsetTop })`);
+  const h = await evaluate(`(() => { const r = document.querySelector('.ai-head').getBoundingClientRect(); return { x: r.x + 80, y: r.y + r.height / 2 }; })()`);
+  await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: h.x, y: h.y, button: 'left', clickCount: 1, buttons: 1 });
+  for (let i = 1; i <= 5; i++) {
+    await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: h.x - i * 18, y: h.y - i * 10, button: 'left', buttons: 1 });
+    await sleep(20);
+  }
+  await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: h.x - 90, y: h.y - 50, button: 'left', clickCount: 1, buttons: 0 });
+  await sleep(300);
+  await check('拖动后面板位置变化', `JSON.stringify({ x: document.querySelector('#aiPanel').offsetLeft, y: document.querySelector('#aiPanel').offsetTop }) !== ${JSON.stringify(before)}`, true);
+  await check('拖动后的位置已保存', `!!localStorage.getItem('lj.ai.pos')`, true);
+}
+
 await check('按 Esc 关闭', `(document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })), 1)`);
 await sleep(400);
 await check('面板已关闭', `document.querySelector('#aiPanel').classList.contains('open')`, false);
