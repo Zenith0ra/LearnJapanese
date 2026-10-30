@@ -66,6 +66,9 @@ export function mountChat() {
         <div class="seg" id="aiModels">
           ${MODELS.map((m) => `<button type="button" data-model="${m.id}">${m.label}</button>`).join('')}
         </div>
+        <button class="ai-keychip" id="aiKeyChip" type="button" title="API Key">
+          <span class="dot"></span><span class="txt"></span>
+        </button>
         <label class="switch"><input type="checkbox" id="aiThink"><span class="track"></span>思考</label>
       </div>
 
@@ -181,16 +184,30 @@ export function mountChat() {
   }, true);
 
   /* ---------- 设置区 ---------- */
+  const keyChip = $('#aiKeyChip');
+
+  // 顶栏下方的小徽标：有 key 显示 ● sk-…abcd，没 key 显示 ○ 未设置
+  function renderKeyChip() {
+    const has = !!state.key;
+    keyChip.classList.toggle('on', has);
+    keyChip.querySelector('.txt').textContent = has
+      ? `${state.key.slice(0, 3)}…${state.key.slice(-4)}`
+      : '未设置 Key';
+    keyChip.title = has ? 'API Key 已保存，点击更换' : '还没有 API Key，点击填写';
+  }
+
   function showSetup(on) {
     setup.hidden = !on;
     msgs.classList.toggle('hide', on);
     if (on) {
       const i = $('#aiKeyInput');
       i.value = '';
+      i.placeholder = state.key ? '已保存，输入新 key 可替换' : 'sk-...';
       setTimeout(() => i.focus({ preventScroll: true }), 40);
     }
   }
   $('#aiKey').addEventListener('click', () => showSetup(setup.hidden));
+  keyChip.addEventListener('click', () => showSetup(true));
   $('#aiKeySave').addEventListener('click', () => {
     const v = $('#aiKeyInput').value.trim();
     const err = $('#aiKeyErr');
@@ -202,6 +219,7 @@ export function mountChat() {
     err.hidden = true;
     state.key = v;
     writeLS(LS_KEY, v);
+    renderKeyChip();
     showSetup(false);
     tip.textContent = '已保存 Key';
     setTimeout(() => { tip.textContent = ''; }, 1800);
@@ -561,5 +579,6 @@ export function mountChat() {
     toast('对话已清空');
   });
 
+  renderKeyChip();
   renderMessages();
 }
