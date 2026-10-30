@@ -990,7 +990,11 @@ select.sel {
   border: 1px solid var(--line-2); background: var(--bg); color: var(--ink);
   font-size: 14.5px; line-height: 1.6; font-family: var(--font-ui);
   min-height: 40px;
+  overflow-y: auto;
+  scrollbar-width: none;          /* 输入框不要那条滑轨，内容长了自己滚 */
+  -ms-overflow-style: none;
 }
+#aiInput::-webkit-scrollbar { width: 0; height: 0; }
 #aiInput:focus { outline: none; border-color: var(--accent); }
 
 .ai-bar { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
