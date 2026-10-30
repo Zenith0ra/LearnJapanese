@@ -29,6 +29,8 @@
   --font-text: var(--font-ja);
   /* 中文正文用宋体一类，和日文的明朝体同一气质；界面控件仍用黑体 */
   --font-zh: "Source Han Serif SC", "Noto Serif SC", "Songti SC", "STSong", "SimSun", "NSimSun", serif;
+
+  -webkit-tap-highlight-color: transparent;   /* 手机点按不要蓝框 */
 }
 
 [data-theme="dark"] {
@@ -605,6 +607,8 @@ select.sel {
 .flashcard {
   position: relative; min-height: 400px; cursor: pointer;
 }
+/* 点卡片翻面时浏览器会给个焦点框，手机上就是一蓝框闪一下 */
+.flashcard:focus, .flashcard:focus-visible { outline: none; }
 .flashcard .face {
   position: absolute; inset: 0; overflow: auto;
   border-radius: 20px; background: var(--surface);
@@ -708,7 +712,14 @@ select.sel {
   .foot-inner { flex-direction: column; gap: 2px; }
   .foot-dot { display: none; }
 
-  .hero { padding: 4px 0 20px; margin-bottom: 26px; }
+  /* 窄屏把页头整体居中，左边对齐在手机上显得歪 */
+  .hero { padding: 4px 0 20px; margin-bottom: 26px; text-align: center; }
+  .hero .seg { display: inline-flex; }
+  .lesson-head { text-align: center; }
+  .lesson-head .top { justify-content: center; }
+  .lesson-meta { justify-content: center; }
+  .cards-bar { justify-content: center; }
+  .cards-bar-end { margin-left: 0; }
   .hero h1 { font-size: 32px; letter-spacing: .06em; }
   .hero.slim h1 { font-size: 26px; }
   .hero .seg { margin-top: 18px; }
