@@ -20,6 +20,16 @@ const pitchNum = (w) => {
   return nums ? nums.map((s) => Number(s.slice(1))).join(' / ') : null;
 };
 
+/* 已掌握：按 level/num/part/idx 记，存在 localStorage */
+const MK = 'lj.mastered';
+const keyOf = (w) => `${w.level}:${w.num}:${w.part}:${w.idx}`;
+const loadMastered = () => {
+  try { return new Set(JSON.parse(localStorage.getItem(MK) || '[]')); } catch { return new Set(); }
+};
+const saveMastered = (set) => {
+  try { localStorage.setItem(MK, JSON.stringify([...set])); } catch { /* 隐私模式忽略 */ }
+};
+
 export async function render(root) {
   const [{ index }, words] = await Promise.all([lessonsAll(), wordsAll()]);
   const ref = new URLSearchParams(location.hash.split('?')[1] ?? '').get('ref');
@@ -34,6 +44,8 @@ export async function render(root) {
     revealed: false,
   };
 
+  const mastered = loadMastered();
+
   root.innerHTML = `
     <div class="cards-wrap">
       <header class="hero slim">
@@ -46,6 +58,14 @@ export async function render(root) {
           ${MODES.map((m) => `<button data-mode="${m.id}" class="${m.id === state.mode ? 'on' : ''}">${m.label}</button>`).join('')}
         </div>
         <div class="cards-bar-end">
+          <span class="mastered-wrap" id="masteredWrap">
+            <button class="mchip" id="masteredBtn" type="button" hidden>
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                   stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              <span>已掌握 <b id="masteredNum">0</b></span>
+            </button>
+            <div class="mastered-pop" id="masteredPop" hidden></div>
+          </span>
           <span class="count" id="counter"></span>
           <div class="seg" id="orderSeg" title="出题顺序">
             <button data-order="order" class="${state.order === 'order' ? 'on' : ''}">顺序</button>
@@ -64,6 +84,11 @@ export async function render(root) {
 
       <div class="card-stage">
         <div class="flashcard" id="card" role="button" tabindex="0" aria-label="点击翻面 / 下一张">
+          <button class="card-mark" id="mark" type="button" aria-pressed="false" title="标记已掌握（M）">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span>掌握</span>
+          </button>
           <div class="face front" id="front"></div>
           <div class="face back" id="back"></div>
         </div>
@@ -116,7 +141,8 @@ export async function render(root) {
   const finished = () => state.i >= state.deck.length;
 
   function restart() {
-    const list = pool();
+    // 只背还没掌握的
+    const list = pool().filter((w) => !mastered.has(keyOf(w)));
     if (state.order === 'order') {
       state.deck = [...list].sort((a, b) =>
         a.level.localeCompare(b.level) || a.num - b.num || a.part - b.part || a.idx - b.idx);
@@ -202,12 +228,17 @@ export async function render(root) {
     bar.style.width = `${Math.min(100, (state.i / Math.max(1, total)) * 100)}%`;
 
     if (!w) {
+      const all = pool().length;
+      const none = all > 0 && state.deck.length === 0;
       front.innerHTML = `<div class="done">
-        <div class="done-title">这一组背完了</div>
-        <div class="done-sub">共 ${total} 个词 · 点一下重新开始</div>
+        <div class="done-title">${none ? '这些词都掌握了' : '这一组背完了'}</div>
+        <div class="done-sub">${none
+          ? `本范围共 ${all} 个词 · 点上方「已掌握」可以撤回来重背`
+          : `共 ${total} 个词 · 点一下重新开始`}</div>
       </div>`;
       back.innerHTML = '';
       card.classList.remove('revealed');
+      paintMastered();
       return;
     }
 
@@ -221,7 +252,86 @@ export async function render(root) {
     if (state.mode === 'audio' && !state.revealed) {
       setTimeout(() => speak(w), 120);
     }
+
+    paintMastered();
   }
+
+  /* ---------- 已掌握 ---------- */
+  const markBtn = root.querySelector('#mark');
+  const mWrap = root.querySelector('#masteredWrap');
+  const mBtn = root.querySelector('#masteredBtn');
+  const mNum = root.querySelector('#masteredNum');
+  const mPop = root.querySelector('#masteredPop');
+
+  const masteredInScope = () => pool().filter((w) => mastered.has(keyOf(w)));
+
+  function paintMastered() {
+    const list = masteredInScope();
+    mBtn.hidden = list.length === 0;
+    mNum.textContent = String(list.length);
+
+    const w = current();
+    const on = !!w && mastered.has(keyOf(w));
+    markBtn.hidden = !w;
+    markBtn.classList.toggle('on', on);
+    markBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    markBtn.querySelector('span').textContent = on ? '已掌握' : '掌握';
+    markBtn.title = on ? '取消掌握（M）' : '标记已掌握（M）';
+
+    if (!mPop.hidden) paintPop();
+  }
+
+  function paintPop() {
+    const list = masteredInScope();
+    const scopeName = state.scope === 'all' ? '全部词条' : `第 ${state.scope.split(':')[1]} 課`;
+    mPop.innerHTML = list.length
+      ? `<div class="mp-head">${scopeName} · 已掌握 ${list.length} 个</div>
+        ${list.map((w) => `
+          <div class="mp-item">
+            <span class="mp-ja">${esc(surfaceOf(w))}</span>
+            <span class="mp-zh">${esc(w.desc)}</span>
+            <button type="button" data-rm="${keyOf(w)}" aria-label="取消掌握" title="取消掌握">×</button>
+          </div>`).join('')}
+        <div class="mp-foot"><button type="button" id="mpClear">全部取消（${list.length}）</button></div>`
+      : '<div class="mp-empty">这个范围还没有标记</div>';
+  }
+
+  function toggleMastered() {
+    const w = current();
+    if (!w) return;
+    const k = keyOf(w);
+    if (mastered.has(k)) mastered.delete(k); else mastered.add(k);
+    saveMastered(mastered);
+    paintMastered();
+  }
+
+  markBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMastered(); });
+
+  mBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    mPop.hidden = !mPop.hidden;
+    if (!mPop.hidden) paintPop();
+  });
+
+  mPop.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const rm = e.target.closest('[data-rm]');
+    if (rm) {
+      mastered.delete(rm.dataset.rm);
+      saveMastered(mastered);
+      paintMastered();
+      return;
+    }
+    if (e.target.closest('#mpClear')) {
+      for (const w of masteredInScope()) mastered.delete(keyOf(w));
+      saveMastered(mastered);
+      paintMastered();
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!mPop.hidden && !mWrap.contains(e.target)) mPop.hidden = true;
+  });
 
   function reveal() {
     if (finished()) return;
@@ -278,10 +388,11 @@ export async function render(root) {
     restart();
   });
 
-  /* 键盘：← 上一张；空格 / 回车 / → 都是「先翻面，再下一张」 */
+  /* 键盘：← 上一张；空格 / 回车 / → 都是「先翻面，再下一张」；M 标记掌握 */
   const onKey = (e) => {
     const t = e.target;
     if (t instanceof Element && t.closest('button, .dd, input, select, textarea')) return;
+    if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleMastered(); return; }
     if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); return; }
     if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') {
       e.preventDefault();
