@@ -329,9 +329,11 @@ export async function render(root) {
     }
   });
 
-  document.addEventListener('click', (e) => {
+  const closePop = (e) => {
     if (!mPop.hidden && !mWrap.contains(e.target)) mPop.hidden = true;
-  });
+  };
+  document.addEventListener('click', closePop);
+  window.addEventListener('hashchange', () => document.removeEventListener('click', closePop), { once: true });
 
   function reveal() {
     if (finished()) return;
