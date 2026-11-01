@@ -1171,12 +1171,19 @@ select.sel {
 /* ============================================================
    练习册（同步练习录音）
    ============================================================ */
-.wb-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
-.wb-hint { font-size: 12.5px; color: var(--faint); }
 
 .player.solo {
   grid-template-columns: auto 1fr auto auto;
   grid-template-areas: "play seek time speed";
+}
+
+/* 播放条吸在顶栏下面，翻列表时不用滚回去换集 */
+.wb-player { position: sticky; top: var(--topbar-h, 56px); z-index: 30; margin-bottom: 14px; }
+.wb-player .player { background: var(--surface); box-shadow: 0 8px 24px -18px rgba(30, 20, 10, .5); }
+
+.player .speed-dd { grid-area: speed; }
+.speed-dd .dd-trigger {
+  min-width: 0; width: auto; height: 30px; padding: 0 6px 0 10px; gap: 6px; font-size: 13px;
 }
 
 .wb-panel { padding: 8px 12px; }

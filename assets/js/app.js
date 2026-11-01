@@ -15,6 +15,14 @@ import * as workbook from './pages/workbook.js';
 applyTheme();
 mountChat();
 
+// 顶栏高度写进 CSS 变量，吸顶的元素（练习册播放条）用得上
+const syncTopbarH = () => {
+  const el = document.querySelector('.topbar');
+  if (el) document.documentElement.style.setProperty('--topbar-h', `${el.offsetHeight}px`);
+};
+syncTopbarH();
+addEventListener('resize', syncTopbarH);
+
 // 深链指定主题：#/lesson/l1?theme=dark
 {
   const t = new URLSearchParams(location.hash.split('?')[1] ?? '').get('theme');

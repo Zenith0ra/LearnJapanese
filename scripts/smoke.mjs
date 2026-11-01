@@ -245,14 +245,14 @@ await evaluate(`localStorage.removeItem('lj.mastered')`);
 /* ---------- 练习册 ---------- */
 await check('导航里有练习', `!!document.querySelector('#nav a[data-nav=workbook]')`);
 await go('#/workbook');
-await check('练习册默认上册 37 条', `document.querySelectorAll('.wb-row').length`, 37);
+await check('练习册上下连成一张清单 62 条', `document.querySelectorAll('.wb-row').length`, 62);
+await check('没有分册切换', `document.querySelector('#wbVol') === null`, true);
 await check('点一条开始播放', `(document.querySelector('.wb-row').click(), 1)`);
 await sleep(1500);
 await check('该条目标记为播放中', `document.querySelectorAll('.wb-row.on').length`, 1);
 await check('播放器读到时长', `document.querySelector('#time').textContent`, (v) => !v.endsWith('/ 0:00'));
-await check('切到下册', `(document.querySelector('#wbVol [data-vol=down]').click(), 1)`);
-await sleep(500);
-await check('下册 25 条', `document.querySelectorAll('.wb-row').length`, 25);
+await check('语速是选择而不是轮换', `(document.querySelector('.speed-dd .dd-trigger').click(), document.querySelectorAll('.speed-dd .dd-opt').length)`, 6);
+await check('能选 0.5× 慢放', `(document.querySelector('.speed-dd .dd-opt[data-value="0.5"]').click(), document.querySelector('.speed-dd .dd-value').textContent)`, '0.5×');
 
 /* ---------- AI 面板 ---------- */await evaluate(`localStorage.setItem('lj.ai.key', JSON.stringify('sk-test-invalid-key-000'))`);
 await evaluate(`localStorage.removeItem('lj.ai.chats'); localStorage.removeItem('lj.ai.current')`);
