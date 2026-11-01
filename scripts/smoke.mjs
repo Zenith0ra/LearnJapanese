@@ -345,8 +345,13 @@ await check('语法页也能读到', `document.querySelector('#aiCtx').textConte
 await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
 await sleep(300);
 
-/* ---------- 主题 ---------- */
-await check('切主题', `(document.querySelector('#themeBtn').click(), document.documentElement.dataset.theme)`, (v) => ['auto', 'light', 'dark'].includes(v));
+/* ---------- PWA / 装到桌面 ---------- */
+await check('页面声明了 manifest', `document.querySelector('link[rel=manifest]')?.getAttribute('href')`, '/manifest.json');
+await check('manifest 可解析且是 standalone', `fetch('/manifest.json').then(r=>r.json()).then(j=>j.display + '/' + j.icons.length).catch(()=>'ERR')`, 'standalone/3');
+await check('Service Worker 已激活', `navigator.serviceWorker.getRegistration().then(r => r && r.active ? 1 : 0).catch(()=>0)`, 1);
+await check('离线缓存里已有首页', `caches.match('/index.html').then(r=>!!r).catch(()=>false)`, true);
+
+/* ---------- 主题 ---------- */await check('切主题', `(document.querySelector('#themeBtn').click(), document.documentElement.dataset.theme)`, (v) => ['auto', 'light', 'dark'].includes(v));
 
 /* ---------- 汇报 ---------- */
 const bad = results.filter((r) => !r.ok);

@@ -107,6 +107,7 @@ main:focus, main:focus-visible { outline: none; }
 /* ---------- topbar ---------- */
 .topbar {
   position: sticky; top: 0; z-index: 40;
+  padding-top: env(safe-area-inset-top, 0px);   /* 装成 app 后避开刘海/状态栏 */
   background: color-mix(in srgb, var(--bg) 84%, transparent);
   backdrop-filter: saturate(180%) blur(14px);
   border-bottom: 1px solid var(--line);
@@ -704,7 +705,7 @@ select.sel {
   .nav a { padding: 7px 11px; font-size: 14px; }
 
   main { padding: 26px 18px 64px; }
-  .foot { padding: 0 18px 44px; font-size: 12px; }
+  .foot { padding: 0 18px calc(44px + env(safe-area-inset-bottom, 0px)); font-size: 12px; }
 
   /* 窄屏把页头整体居中，左边对齐在手机上显得歪 */
   .hero { padding: 4px 0 20px; margin-bottom: 26px; text-align: center; }

@@ -7,6 +7,12 @@
 <meta name="description" content="《新版中日交流标准日本语》初级 48 课 · 中级 32 课：课文、注音、译文、单词、语法。">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='34' fill='%23b0442c'/></svg>">
+<link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#f7f4ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16150f" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="stylesheet" href="/assets/app.css">
 </head>
 <body>
@@ -49,6 +55,14 @@
   }
   window.addEventListener('error', function (e) { showErr(e.message + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno); });
   window.addEventListener('unhandledrejection', function (e) { showErr('Promise: ' + ((e.reason && e.reason.message) || e.reason)); });
+
+  /* 装到桌面（PWA）：Android Chrome 会提示「安装应用」，装完没有地址栏和标签页 */
+  var swOK = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  if ('serviceWorker' in navigator && swOK) {
+    addEventListener('load', function () {
+      navigator.serviceWorker.register('/sw.js').catch(function () { /* 离线能力拿不到也不影响使用 */ });
+    });
+  }
 </script>
 <script type="module" src="/assets/js/app.js"></script>
 </body>
