@@ -15,10 +15,6 @@ export async function render(root) {
   let lastPage = { rows: [], slice: [], total: 0, pages: 1 };
 
   root.innerHTML = `
-    <header class="hero slim">
-      <h1>单词总表</h1>
-    </header>
-
     <div class="filters">
       <div class="search">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8">

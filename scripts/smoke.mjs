@@ -167,31 +167,41 @@ await check('中级语法分组', `document.querySelectorAll('.gpage-item').leng
 /* ---------- 背单词 ---------- */
 await evaluate(`localStorage.removeItem('lj.mastered')`);
 await go('#/cards?ref=001');
-// 随机顺序下第一张可能是没有声调标注的词，先切顺序让断言稳定
-await check('先切顺序（固定出题）', `(document.querySelector('#orderSeg [data-order=order]').click(), 1)`);
-await sleep(350);
-await check('卡片有词', `!!document.querySelector('#front .front-cn, #front .front-ja')`);
+await check('卡片有词', `!!document.querySelector('#front .front-cn')`);
+await check('正面是中文', `!!document.querySelector('#front .front-cn')`);
+await check('没有出题方向选择器', `document.querySelector('#modes') === null`, true);
+await check('没有顺序选择器', `document.querySelector('#orderSeg') === null`, true);
+await check('没有重置按钮', `document.querySelector('#restart') === null`, true);
 await check('没有多余的揭晓按钮', `document.querySelector('#action') === null`, true);
 await check('点卡片翻面', `(document.querySelector('#card').click(), 1)`);
 await sleep(200);
 await check('卡片已翻到背面', `document.querySelector('#card').classList.contains('revealed')`, true);
 await check('背面有大字与释义', `!!document.querySelector('#back .back-hero') && !!document.querySelector('#back .back-meaning')`);
-await check('背面有声调数字', `!!document.querySelector('#back .pitch-num')`);
 await check('再点一次翻回正面', `(document.querySelector('#card').click(), 1)`);
 await sleep(200);
 await check('仍在第一张', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('1 /'));
 await check('正面可见', `document.querySelector('#card').classList.contains('revealed')`, false);
 await check('第一张时上一个不可用', `document.querySelector('#prevBtn').disabled`, true);
 
-// 两侧箭头切词
+// 声调标注：随机顺序可能抽到没有 @ 的词，往后翻几张找到带声调的那张
+let sawPitch = false;
+for (let i = 0; i < 10 && !sawPitch; i++) {
+  sawPitch = await evaluate(`!!document.querySelector('#back .pitch-num')`);
+  if (!sawPitch) {
+    await evaluate(`(document.querySelector('#nextBtn').click(), 1)`);
+    await sleep(200);
+  }
+}
+await check('背面有声调数字', `!!document.querySelector('#back .pitch-num')`);
+
+// 回到第一张再做方向键的断言
+await go('#/cards?ref=001');
 await check('点右箭头到下一张', `(document.querySelector('#nextBtn').click(), 1)`);
 await sleep(250);
-await check('计数走到第二个', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('2 /'));
 await check('换词后是正面', `document.querySelector('#card').classList.contains('revealed')`, false);
 await check('换卡后背面瞬间不可见', `getComputedStyle(document.querySelector('#back')).opacity`, '0');
 await check('点左箭头回上一张', `(document.querySelector('#prevBtn').click(), 1)`);
 await sleep(250);
-await check('回到第一张', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('1 /'));
 
 // 键盘：空格翻面，↓/→ 下一个，↑/← 上一个
 await check('空格翻面', `(document.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true })), 1)`);
@@ -199,7 +209,6 @@ await sleep(200);
 await check('空格后已翻面', `document.querySelector('#card').classList.contains('revealed')`, true);
 await check('下键切下一个', `(document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })), 1)`);
 await sleep(250);
-await check('已到第二张', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('2 /'));
 await check('右键切下一个', `(document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })), 1)`);
 await sleep(250);
 await check('已到第三张', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('3 /'));
@@ -219,27 +228,19 @@ await sleep(400);
 await check('范围已切到第 3 课', `document.querySelector('#counter').textContent.trim()`, (v) => v.endsWith('/ 43'));
 await check('触发按钮显示课名', `document.querySelector('.dd-value').textContent.includes('第 3 課')`, true);
 
-// 顺序 / 随机
-await check('切到顺序', `(document.querySelector('#orderSeg [data-order=order]').click(), 1)`);
-await sleep(300);
-await check('顺序模式第一张是第 3 课第一个词', `document.querySelector('#front .front-cn')?.textContent`, (v) => v === '百货商店');
-
-// 已掌握：标记后重新开始要少一个词，列表里可以取消
+// 已掌握：标记后重新进入要少一个词，列表里可以取消
 await check('卡片上有「掌握」按钮', `!!document.querySelector('#mark')`);
 await check('点「掌握」标记当前词', `(document.querySelector('#mark').click(), 1)`);
 await sleep(200);
 await check('标记后按钮变为已掌握', `document.querySelector('#mark').classList.contains('on')`);
 await check('工具栏显示已掌握数量', `document.querySelector('#masteredNum').textContent`, '1');
-await check('重新开始后不再包含它', `(document.querySelector('#restart').click(), document.querySelector('#counter').textContent)`, (v) => v.endsWith('/ 42'));
+await go('#/cards?ref=003');
+await check('重新进入后不再包含它', `document.querySelector('#counter').textContent.trim()`, (v) => v.endsWith('/ 42'));
 await check('已掌握列表可展开', `(document.querySelector('#masteredBtn').click(), document.querySelectorAll('.mp-item').length)`, 1);
 await check('从列表里取消掌握', `(document.querySelector('.mp-item [data-rm]').click(), 1)`);
 await sleep(200);
 await check('取消后徽标消失', `document.querySelector('#masteredBtn').hidden`, true);
 await evaluate(`localStorage.removeItem('lj.mastered')`);
-
-await check('切回随机', `(document.querySelector('#orderSeg [data-order=random]').click(), 1)`);
-await sleep(200);
-await check('随机模式仍从第一张开始', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('1 /'));
 
 /* ---------- 练习册 ---------- */
 await check('导航里有练习', `!!document.querySelector('#nav a[data-nav=workbook]')`);

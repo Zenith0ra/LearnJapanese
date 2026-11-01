@@ -1,18 +1,10 @@
-/** 背单词：翻卡背诵（四种出题方向 + 轻量淡入切换） */
+/** 背单词：看中文 → 翻面看日语（随机出题，轻量淡入切换） */
 import { pitch, plain } from '../ruby.js';
 import { lessonsAll, wordsAll } from '../data.js';
-import { prefs, setPref } from '../store.js';
 import * as audio from '../audio.js';
 import { esc } from '../util.js';
 import { dropdown } from '../ui/dropdown.js';
 import { setContextProvider, LEVEL_NAME } from '../context.js';
-
-const MODES = [
-  { id: 'cn', label: '中文' },
-  { id: 'kanji', label: '汉字' },
-  { id: 'kana', label: '假名' },
-  { id: 'audio', label: '听音' },
-];
 
 const kanaOf = (w) => w.kana.replace(/@\d{1,2}/g, '');
 const surfaceOf = (w) => plain(w.word || w.kanji || '') || kanaOf(w);
@@ -38,8 +30,6 @@ export async function render(root) {
 
   const state = {
     scope: fromLesson ? `${fromLesson.level}:${fromLesson.num}` : 'all',
-    mode: 'cn',
-    order: prefs().cardOrder === 'order' ? 'order' : 'random',
     deck: [],
     i: 0,
     revealed: false,
@@ -49,36 +39,17 @@ export async function render(root) {
 
   root.innerHTML = `
     <div class="cards-wrap">
-      <header class="hero slim">
-        <h1>背单词</h1>
-      </header>
-
       <div class="cards-bar">
         <span id="scopeHost"></span>
-        <div class="seg" id="modes">
-          ${MODES.map((m) => `<button data-mode="${m.id}" class="${m.id === state.mode ? 'on' : ''}">${m.label}</button>`).join('')}
-        </div>
-        <div class="cards-bar-end">
-          <span class="mastered-wrap" id="masteredWrap">
-            <button class="mchip" id="masteredBtn" type="button" hidden>
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
-                   stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-              <span>已掌握 <b id="masteredNum">0</b></span>
-            </button>
-            <div class="mastered-pop" id="masteredPop" hidden></div>
-          </span>
-          <span class="count" id="counter"></span>
-          <div class="seg" id="orderSeg" title="出题顺序">
-            <button data-order="order" class="${state.order === 'order' ? 'on' : ''}">顺序</button>
-            <button data-order="random" class="${state.order === 'random' ? 'on' : ''}">随机</button>
-          </div>
-          <button class="icon-btn" id="restart" title="重新开始" aria-label="重新开始">
-            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
-                 stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 11a8 8 0 10-2.6 6"/><path d="M20 5v6h-6"/>
-            </svg>
+        <span class="count" id="counter"></span>
+        <span class="mastered-wrap" id="masteredWrap">
+          <button class="mchip" id="masteredBtn" type="button" hidden>
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span>已掌握 <b id="masteredNum">0</b></span>
           </button>
-        </div>
+          <div class="mastered-pop" id="masteredPop" hidden></div>
+        </span>
       </div>
 
       <div class="card-progress"><i id="bar" style="width:0%"></i></div>
@@ -150,14 +121,8 @@ export async function render(root) {
   const finished = () => state.i >= state.deck.length;
 
   function restart() {
-    // 只背还没掌握的
-    const list = pool().filter((w) => !mastered.has(keyOf(w)));
-    if (state.order === 'order') {
-      state.deck = [...list].sort((a, b) =>
-        a.level.localeCompare(b.level) || a.num - b.num || a.part - b.part || a.idx - b.idx);
-    } else {
-      state.deck = shuffle(list);
-    }
+    // 只背还没掌握的，顺序随机
+    state.deck = shuffle(pool().filter((w) => !mastered.has(keyOf(w))));
     state.i = 0;
     state.revealed = false;
     paint();
@@ -166,26 +131,9 @@ export async function render(root) {
   const speak = (w, rate = 0.9) => { if (w) audio.speak(kanaOf(w), rate); };
 
   function frontHtml(w) {
-    const surface = surfaceOf(w);
     const k = window.innerWidth < 621 ? 0.8 : 1;
-    const size = (t) => Math.round((t.length <= 4 ? 52 : t.length <= 8 ? 42 : 34) * k);
-
-    if (state.mode === 'audio') {
-      return `<button class="speak-big" id="speakBtn">
-        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7"/><path d="M18.5 5.5a9 9 0 010 13"/>
-        </svg>
-        <span>再听一次</span>
-      </button>`;
-    }
-    if (state.mode === 'cn') {
-      const fs = Math.round(Math.min(44, Math.max(26, 900 / Math.max(4, w.desc.length))) * k);
-      return `<div class="front-cn" style="font-size:${fs}px">${esc(w.desc)}</div>`;
-    }
-    if (state.mode === 'kanji') {
-      return `<div class="front-ja" style="font-size:${size(surface)}px">${esc(surface)}</div>`;
-    }
-    return `<div class="front-ja" style="font-size:${size(kanaOf(w))}px">${esc(kanaOf(w))}</div>`;
+    const fs = Math.round(Math.min(44, Math.max(26, 900 / Math.max(4, w.desc.length))) * k);
+    return `<div class="front-cn" style="font-size:${fs}px">${esc(w.desc)}</div>`;
   }
 
   function backHtml(w) {
@@ -259,10 +207,6 @@ export async function render(root) {
 
     front.querySelector('#speakBtn')?.addEventListener('click', (e) => { e.stopPropagation(); speak(w); });
     back.querySelector('#speakBtn')?.addEventListener('click', (e) => { e.stopPropagation(); speak(w); });
-
-    if (state.mode === 'audio' && !state.revealed) {
-      setTimeout(() => speak(w), 120);
-    }
 
     paintMastered();
     document.dispatchEvent(new Event('lj:ctx'));
@@ -381,11 +325,10 @@ export async function render(root) {
     const w = current();
     const [lv, num] = state.scope === 'all' ? ['', ''] : state.scope.split(':');
     const scopeName = state.scope === 'all' ? '全部词条' : `${LEVEL_NAME[lv]} 第 ${num} 課`;
-    const modeName = MODES.find((m) => m.id === state.mode)?.label ?? '';
     const head = [
       '【页面】背单词',
       `【范围】${scopeName}`,
-      `【出题方向】${modeName}　【顺序】${state.order === 'order' ? '顺序' : '随机'}`,
+      '【出题方式】看中文猜日语（随机顺序）',
     ].join('\n');
 
     if (!w) return { label: `背单词 · ${scopeName}`, text: `${head}\n【状态】这一组已经背完` };
@@ -409,28 +352,6 @@ export async function render(root) {
   // 卡片两侧的箭头：切上一个 / 下一个，不触发翻面
   root.querySelector('#prevBtn').addEventListener('click', (e) => { e.stopPropagation(); move(-1); });
   root.querySelector('#nextBtn').addEventListener('click', (e) => { e.stopPropagation(); move(1); });
-  root.querySelector('#restart').addEventListener('click', (e) => {
-    e.stopPropagation();
-    restart();
-  });
-
-  root.querySelector('#modes').addEventListener('click', (e) => {
-    const b = e.target.closest('button[data-mode]');
-    if (!b || b.dataset.mode === state.mode) return;
-    state.mode = b.dataset.mode;
-    root.querySelectorAll('#modes button').forEach((x) => x.classList.toggle('on', x === b));
-    state.revealed = false;
-    paint();
-  });
-
-  root.querySelector('#orderSeg').addEventListener('click', (e) => {
-    const b = e.target.closest('button[data-order]');
-    if (!b || b.dataset.order === state.order) return;
-    state.order = b.dataset.order;
-    setPref('cardOrder', state.order);
-    root.querySelectorAll('#orderSeg button').forEach((x) => x.classList.toggle('on', x === b));
-    restart();
-  });
 
   /* 键盘：↑/← 上一个，↓/→ 下一个，空格 / 回车 翻面，M 标记掌握 */
   const onKey = (e) => {

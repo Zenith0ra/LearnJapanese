@@ -594,6 +594,7 @@ select.sel {
   margin-left: auto; flex-shrink: 0;
 }
 .cards-bar .count { font-size: 14px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.cards-bar .mastered-wrap { margin-left: auto; }
 .card-progress {
   height: 2px; background: var(--line); border-radius: 99px;
   overflow: hidden; margin-bottom: 18px;
@@ -718,14 +719,15 @@ select.sel {
   .lesson-head { text-align: center; }
   .lesson-head .top { justify-content: center; }
   .lesson-meta { justify-content: center; }
-  /* 背单词工具栏：窄屏改成三条满宽的行，比居中的碎块整齐 */
-  .cards-bar { flex-direction: column; align-items: stretch; gap: 8px; }
-  #scopeHost { display: block; }
+  /* 背单词顶栏：一行放下「范围 + 进度 + 已掌握」，下拉占满剩余宽度 */
+  .cards-bar { flex-wrap: wrap; align-items: center; position: relative; }
+  #scopeHost { flex: 1 1 140px; min-width: 0; display: block; }
   #scopeHost .dd { display: block; }
   #scopeHost .dd-trigger { width: 100%; max-width: none; justify-content: space-between; }
-  #modes { display: flex; }
-  #modes button { flex: 1; }
-  .cards-bar-end { width: 100%; margin-left: 0; justify-content: space-between; }
+  .cards-bar .mastered-wrap { margin-left: auto; }
+  /* 已掌握列表铺满工具栏宽度，不会再被裁 */
+  .cards-bar .mastered-wrap { position: static; }
+  .mastered-pop { left: 0; right: 0; width: auto; top: calc(100% + 8px); }
 
   /* 单词/语法筛选：搜索独占一行，下拉和条数并排 */
   .filters { gap: 8px; }

@@ -10,10 +10,6 @@ export async function render(root) {
   let lastRows = [];
 
   root.innerHTML = `
-    <header class="hero slim">
-      <h1>语法总表</h1>
-    </header>
-
     <div class="filters">
       <div class="search">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8">
