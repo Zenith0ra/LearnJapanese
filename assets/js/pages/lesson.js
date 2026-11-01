@@ -1,6 +1,6 @@
 /** 课文页 */
 import { ja, plain, pitch } from '../ruby.js';
-import { lessonsAll, lessonById, neighbours, wordsOf, grammarOf } from '../data.js';
+import { lessonsAll, lessonById, neighbours, wordsOf, grammarOf, workbookAll } from '../data.js';
 import { prefs, setPref } from '../store.js';
 import * as audio from '../audio.js';
 import { esc } from '../util.js';
@@ -30,6 +30,11 @@ export async function render(root, id) {
   const { prev, next } = await neighbours(l.id);
   const p = prefs();
 
+  // 初级才有同步练习录音
+  const wbSrc = l.level === 'basic'
+    ? (await workbookAll()).find((x) => x.kind === 'lesson' && x.num === l.num)?.src ?? null
+    : null;
+
   const chapters = l.level === 'basic'
     ? [
         { key: 'basic4', label: '基本课文', block: l.basic4, tr: l.t.basic4 },
@@ -58,6 +63,7 @@ export async function render(root, id) {
       <div class="seg" id="trackSeg">
         <button data-track="lesson" class="on">课文</button>
         <button data-track="word">单词</button>
+        ${wbSrc ? '<button data-track="wb">练习</button>' : ''}
       </div>
       <input class="seek" id="seek" type="range" min="0" max="1000" value="0" step="1" aria-label="播放进度">
       <span class="time" id="time">0:00 / 0:00</span>
@@ -84,7 +90,7 @@ export async function render(root, id) {
 
   /* ---------- 音频 ---------- */
   let track = 'lesson';
-  const srcOf = (t) => `/audio/${t === 'lesson' ? 'lesson' : 'word'}/${l.id}.mp3`;
+  const srcOf = (t) => (t === 'wb' && wbSrc ? wbSrc : `/audio/${t === 'lesson' ? 'lesson' : 'word'}/${l.id}.mp3`);
 
   const playBtn = root.querySelector('#playBtn');
   const seek = root.querySelector('#seek');

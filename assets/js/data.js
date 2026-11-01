@@ -22,6 +22,7 @@ export const lessonsAll = () => get('lessons');   // { basic, middle, index }
 export const wordsAll = () => get('words');
 export const grammarAll = () => get('grammar');
 export const meta = () => get('meta');
+export const workbookAll = () => get('workbook');   // 练习册音频索引
 
 /** 按课次取生词 */
 export async function wordsOf(ref) {

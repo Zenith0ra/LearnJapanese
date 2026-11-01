@@ -10,6 +10,7 @@ import * as lesson from './pages/lesson.js';
 import * as words from './pages/words.js';
 import * as grammar from './pages/grammar.js';
 import * as cards from './pages/cards.js';
+import * as workbook from './pages/workbook.js';
 
 applyTheme();
 mountChat();
@@ -26,6 +27,7 @@ const routes = [
   { re: /^\/words$/, page: words, nav: 'words' },
   { re: /^\/grammar$/, page: grammar, nav: 'grammar' },
   { re: /^\/cards$/, page: cards, nav: 'cards' },
+  { re: /^\/workbook$/, page: workbook, nav: 'workbook' },
 ];
 
 const app = $('#app');

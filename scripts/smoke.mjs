@@ -241,8 +241,19 @@ await check('切回随机', `(document.querySelector('#orderSeg [data-order=rand
 await sleep(200);
 await check('随机模式仍从第一张开始', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('1 /'));
 
-/* ---------- AI 面板 ---------- */
-await evaluate(`localStorage.setItem('lj.ai.key', JSON.stringify('sk-test-invalid-key-000'))`);
+/* ---------- 练习册 ---------- */
+await check('导航里有练习', `!!document.querySelector('#nav a[data-nav=workbook]')`);
+await go('#/workbook');
+await check('练习册默认上册 37 条', `document.querySelectorAll('.wb-row').length`, 37);
+await check('点一条开始播放', `(document.querySelector('.wb-row').click(), 1)`);
+await sleep(1500);
+await check('该条目标记为播放中', `document.querySelectorAll('.wb-row.on').length`, 1);
+await check('播放器读到时长', `document.querySelector('#time').textContent`, (v) => !v.endsWith('/ 0:00'));
+await check('切到下册', `(document.querySelector('#wbVol [data-vol=down]').click(), 1)`);
+await sleep(500);
+await check('下册 25 条', `document.querySelectorAll('.wb-row').length`, 25);
+
+/* ---------- AI 面板 ---------- */await evaluate(`localStorage.setItem('lj.ai.key', JSON.stringify('sk-test-invalid-key-000'))`);
 await evaluate(`localStorage.removeItem('lj.ai.chats'); localStorage.removeItem('lj.ai.current')`);
 await go('#/');
 await check('AI 浮动按钮存在', `!!document.querySelector('#aiFab')`);

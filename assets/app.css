@@ -1166,3 +1166,56 @@ select.sel {
 .card-nav.next { right: 10px; }
 .card-nav:hover { opacity: 1; color: var(--ink-2); background: var(--surface-2); border-color: var(--line); }
 .card-nav:disabled { opacity: .18; pointer-events: none; }
+/* ============================================================
+   练习册（同步练习录音）
+   ============================================================ */
+.wb-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.wb-hint { font-size: 12.5px; color: var(--faint); }
+
+.player.solo {
+  grid-template-columns: auto 1fr auto auto;
+  grid-template-areas: "play seek time speed";
+}
+
+.wb-panel { padding: 8px 12px; }
+.wb-row {
+  display: grid;
+  grid-template-columns: 2.4em 9.5em minmax(0, 1fr) 2em;
+  grid-template-areas: "idx label title icon";
+  align-items: center; gap: 10px;
+  width: 100%; padding: 11px 10px; text-align: left;
+  border-radius: 9px; color: var(--ink-2); font-size: 15px;
+  transition: background .12s;
+}
+.wb-row + .wb-row { box-shadow: inset 0 1px 0 var(--line); }
+.wb-row:hover { background: var(--surface-2); }
+.wb-row.on { background: var(--accent-bg); }
+.wb-row.on .wb-label { color: var(--accent); font-weight: 600; }
+.wb-row.on .wb-icon { color: var(--accent); }
+.wb-idx { grid-area: idx; font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.wb-label { grid-area: label; font-family: var(--font-ja); white-space: nowrap; }
+.wb-title {
+  grid-area: title; font-family: var(--font-ja); color: var(--muted);
+  font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.wb-icon { grid-area: icon; justify-self: end; color: var(--faint); display: grid; place-items: center; }
+
+@media (max-width: 620px) {
+  .player.solo {
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "play seek speed"
+      "play time speed";
+  }
+  .player.solo .time { justify-self: start; }
+  .player.solo .speed { align-self: center; }
+
+  .wb-row {
+    grid-template-columns: 2em minmax(0, 1fr) 2em;
+    grid-template-areas:
+      "idx label icon"
+      ".   title title";
+    row-gap: 2px;
+  }
+  .wb-title { font-size: 13px; }
+}
