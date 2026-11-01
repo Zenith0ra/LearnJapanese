@@ -142,17 +142,12 @@ main {
 }
 @keyframes rise { from { opacity: 0; transform: translateY(6px); } }
 .foot {
-  max-width: 1080px; margin: 0 auto; padding: 0 24px 56px;
-  color: var(--muted); font-size: 13px;
+  max-width: 1080px; margin: 0 auto; padding: 0 24px 52px;
+  color: var(--faint); font-size: 12.5px; text-align: center;
 }
-/* 两段信息，宽屏一行、窄屏上下排；中间用间隔点分开，避免一句话折成两行时断得难看 */
-.foot-inner {
-  display: flex; flex-wrap: wrap; align-items: baseline;
-  gap: 4px 10px; line-height: 1.7;
-}
-.foot-dot { color: var(--faint); user-select: none; }
+.foot-line { margin: 0; line-height: 1.7; }
 .foot a {
-  color: var(--ink-2); text-decoration: none;
+  color: var(--muted); text-decoration: none;
   border-bottom: 1px solid var(--line-2); padding-bottom: 1px;
   transition: color .15s, border-color .15s;
 }
@@ -709,9 +704,7 @@ select.sel {
   .nav a { padding: 7px 11px; font-size: 14px; }
 
   main { padding: 26px 18px 64px; }
-  .foot { padding: 0 18px 44px; }
-  .foot-inner { flex-direction: column; gap: 2px; }
-  .foot-dot { display: none; }
+  .foot { padding: 0 18px 44px; font-size: 12px; }
 
   /* 窄屏把页头整体居中，左边对齐在手机上显得歪 */
   .hero { padding: 4px 0 20px; margin-bottom: 26px; text-align: center; }
@@ -1168,6 +1161,13 @@ select.sel {
 .card-nav.next { right: 10px; }
 .card-nav:hover { opacity: 1; color: var(--ink-2); background: var(--surface-2); border-color: var(--line); }
 .card-nav:disabled { opacity: .18; pointer-events: none; }
+
+@media (max-width: 620px) {
+  /* 手机上箭头放大一点，主要靠点卡片两侧的大区域 */
+  .card-nav { width: 46px; height: 46px; opacity: .85; }
+  .card-nav.prev { left: 2px; }
+  .card-nav.next { right: 2px; }
+}
 /* ============================================================
    练习册（同步练习录音）
    ============================================================ */

@@ -347,7 +347,18 @@ export async function render(root) {
     return { label: `背单词 · 第 ${w.num} 課 · ${surfaceOf(w)}`, text: `${head}\n${body}` };
   });
 
-  card.addEventListener('click', () => { if (finished()) restart(); else flip(); });
+  /* 点卡片：没翻面时点哪都翻面；翻面后左 30% 上一个、右 30% 下一个、中间翻回
+     （合成点击没有坐标，按中间处理） */
+  card.addEventListener('click', (e) => {
+    if (finished()) { restart(); return; }
+    if (!state.revealed) { flip(); return; }
+    const r = card.getBoundingClientRect();
+    const hasPos = e.clientX > 0 || e.clientY > 0;
+    const ratio = hasPos ? (e.clientX - r.left) / Math.max(1, r.width) : 0.5;
+    if (ratio < 0.3) move(-1);
+    else if (ratio > 0.7) move(1);
+    else flip();
+  });
 
   // 卡片两侧的箭头：切上一个 / 下一个，不触发翻面
   root.querySelector('#prevBtn').addEventListener('click', (e) => { e.stopPropagation(); move(-1); });

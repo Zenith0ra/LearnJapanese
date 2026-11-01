@@ -219,6 +219,30 @@ await check('左键切上一个', `(document.dispatchEvent(new KeyboardEvent('ke
 await sleep(250);
 await check('回到第一张', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('1 /'));
 
+// 翻开后点卡片左右两侧（大区域）切词，点中间翻回
+{
+  const box = await evaluate(`(() => { const r = document.querySelector('#card').getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; })()`);
+  const tapAt = async (fx, fy = 0.5) => {
+    const x = Math.round(box.x + box.w * fx);
+    const y = Math.round(box.y + box.h * fy);
+    await send('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', clickCount: 1, buttons: 1 });
+    await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', clickCount: 1, buttons: 0 });
+    await sleep(300);
+  };
+  await evaluate(`document.querySelector('#card').click()`);   // 翻到背面
+  await sleep(250);
+  await tapAt(0.85);
+  await check('点右侧区域到下一张', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('2 /'));
+  await evaluate(`document.querySelector('#card').click()`);   // 再翻开
+  await sleep(250);
+  await tapAt(0.15);
+  await check('点左侧区域回上一张', `document.querySelector('#counter').textContent.trim()`, (v) => v.startsWith('1 /'));
+  await evaluate(`document.querySelector('#card').click()`);
+  await sleep(250);
+  await tapAt(0.5, 0.8);   // 避开背面的发音按钮
+  await check('点中间翻回正面', `document.querySelector('#card').classList.contains('revealed')`, false);
+}
+
 // 选择某一课
 await check('打开课次下拉', `(document.querySelector('.dd-trigger').click(), 1)`);
 await sleep(200);
