@@ -76,9 +76,9 @@ const go = async (hash) => {
   await sleep(120);
   await send('Page.navigate', { url: `${BASE}/${hash}` });
   await sleep(1200);
-  // 线上偶发 CDN 冷启动，多等一会儿直到页面骨架渲染出来
-  for (let i = 0; i < 20; i++) {
-    const ok = await evaluate(`document.readyState === 'complete' && !!document.querySelector('#app') && document.querySelector('#app').children.length > 0`);
+  // 线上偶发 CDN 冷启动：等到「载入中…」占位消失，说明页面真的渲染完了
+  for (let i = 0; i < 40; i++) {
+    const ok = await evaluate(`document.readyState === 'complete' && document.querySelector('#app') && document.querySelector('#app').children.length > 0 && !document.body.textContent.includes('载入中…')`);
     if (ok) break;
     await sleep(150);
   }
