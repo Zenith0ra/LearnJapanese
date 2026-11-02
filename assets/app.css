@@ -765,15 +765,20 @@ select.sel {
   .toolbar .seg::-webkit-scrollbar { display: none; }
   .toolbar .opts { width: 100%; gap: 20px; }
 
+  /* 手机：第一行 播放 / 音轨 / 倍速，第二行 进度条 + 时间，不会互相挤 */
   .player {
-    grid-template-columns: auto 1fr auto auto;
+    grid-template-columns: auto 1fr auto;
     grid-template-areas:
-      "play track time speed"
-      "seek seek seek seek";
+      "play track speed"
+      "seek seek time";
     gap: 10px 12px; padding: 12px 14px;
   }
-  .player .play { width: 36px; height: 36px; }
-  .seek { margin-top: 2px; }
+  .player .play { width: 38px; height: 38px; }
+  .player .seg { justify-self: start; }
+  .player .seg button { height: 28px; padding: 0 11px; font-size: 13px; }
+  .player .speed { min-width: 48px; height: 30px; font-size: 13px; }
+  .player .time { justify-self: end; font-size: 12px; }
+  .seek { margin-top: 0; }
 
   .word-row { grid-template-columns: 8.2em minmax(0, 1fr); gap: 0 14px; padding: 10px 0 11px; }
   .word-row .kanji { font-size: 18px; }
@@ -1217,7 +1222,7 @@ select.sel {
       "play seek speed"
       "play time speed";
   }
-  .player.solo .time { justify-self: start; }
+  .player.solo .time { justify-self: end; }
   .player.solo .speed { align-self: center; }
 
   .wb-row {
