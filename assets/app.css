@@ -780,6 +780,11 @@ select.sel {
   .player .time { justify-self: end; font-size: 12px; }
   .seek { margin-top: 0; }
 
+  /* 章节标签在窄屏横着排不下，改成可横向滑动，不要溢出 */
+  .toolbar .seg { max-width: 100%; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .toolbar .seg::-webkit-scrollbar { display: none; }
+  .toolbar .seg button { flex: 0 0 auto; }
+
   .word-row { grid-template-columns: 8.2em minmax(0, 1fr); gap: 0 14px; padding: 10px 0 11px; }
   .word-row .kanji { font-size: 18px; }
   .word-row .kana { font-size: 14px; }
